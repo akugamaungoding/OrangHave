@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from '../i18n';
 import SdgMark from '../components/SdgMark';
 
@@ -80,6 +80,27 @@ class GameAudio {
     }
   }
 
+  static playRadarPulse() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const osc = GameAudio.ctx.createOscillator();
+      const gain = GameAudio.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, GameAudio.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, GameAudio.ctx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.12, GameAudio.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, GameAudio.ctx.currentTime + 0.7);
+      osc.connect(gain);
+      gain.connect(GameAudio.ctx.destination);
+      osc.start();
+      osc.stop(GameAudio.ctx.currentTime + 0.7);
+    } catch {
+      // Audio failed
+    }
+  }
+
   static playDangerWarning() {
     try {
       GameAudio.init();
@@ -106,12 +127,12 @@ class GameAudio {
    BANYAK TITIK KEBAKARAN KARHUTLA DI BERBAGAI PENJURU HUTAN (MULTIPLE HOTSPOTS)
    ────────────────────────────────────────────────────────────────────────── */
 const DEFAULT_FIRE_HOTSPOTS = [
-  { id: 'f1', x: 530, y: 195, rx: 85, ry: 55, name: 'Karhutla Kubah Gambut Tengah', intensity: 1.1 },
-  { id: 'f2', x: 740, y: 150, rx: 65, ry: 48, name: 'Titik Api Kanopi Meranti Timur', intensity: 0.9 },
-  { id: 'f3', x: 730, y: 470, rx: 60, ry: 45, name: 'Bara Api Semak Sisi Timur', intensity: 0.95 },
-  { id: 'f4', x: 370, y: 580, rx: 70, ry: 50, name: 'Kebakaran Rawa Gambut Selatan', intensity: 1.05 },
-  { id: 'f5', x: 220, y: 390, rx: 62, ry: 46, name: 'Api Tajuk Belukar Barat', intensity: 0.85 },
-  { id: 'f6', x: 600, y: 730, rx: 55, ry: 40, name: 'Rekahan Bara Bawah Tanah Tenggara', intensity: 0.8 },
+  { id: 'f1', x: 530, y: 195, rx: 85, ry: 55, name: 'Karhutla Kubah Gambut Tengah', nameEn: 'Central Peat Dome Wildfire', intensity: 1.1 },
+  { id: 'f2', x: 740, y: 150, rx: 65, ry: 48, name: 'Titik Api Kanopi Meranti Timur', nameEn: 'Eastern Meranti Canopy Hotspot', intensity: 0.9 },
+  { id: 'f3', x: 730, y: 470, rx: 60, ry: 45, name: 'Bara Api Semak Sisi Timur', nameEn: 'Eastern Shrubland Embers', intensity: 0.95 },
+  { id: 'f4', x: 370, y: 580, rx: 70, ry: 50, name: 'Kebakaran Rawa Gambut Selatan', nameEn: 'Southern Peat Swamp Fire', intensity: 1.05 },
+  { id: 'f5', x: 220, y: 390, rx: 62, ry: 46, name: 'Api Tajuk Belukar Barat', nameEn: 'Western Thicket Crown Fire', intensity: 0.85 },
+  { id: 'f6', x: 600, y: 730, rx: 55, ry: 40, name: 'Rekahan Bara Bawah Tanah Tenggara', nameEn: 'Southeast Underground Ember Rift', intensity: 0.8 },
 ];
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -129,6 +150,7 @@ const WILDLIFE_MISSIONS = [
       name: 'Semak Riparian Rindang Barat Laut',
       nameEn: 'Northwest Riparian Shrubland',
       desc: 'Semak hijau lembap teduh tempat kancil bersembunyi dari panas api.',
+      descEn: 'Shady, moist green shrubs where the mouse deer hides from the heat of the fire.',
       icon: '🌿',
       x: 160,
       y: 200,
@@ -151,6 +173,7 @@ const WILDLIFE_MISSIONS = [
       name: 'Kanopi Pohon Ulin Tenggara',
       nameEn: 'Southeast Ironwood Canopy',
       desc: 'Tajuk pohon ulin purba yang tinggi dan aman dari kebakaran gambut bawah.',
+      descEn: 'The tall crowns of ancient ironwood trees, safe from the peat fires below.',
       icon: '🌳',
       x: 650,
       y: 630,
@@ -173,6 +196,7 @@ const WILDLIFE_MISSIONS = [
       name: 'Liang Bukit Lembap Barat Daya',
       nameEn: 'Southwest Moist Hill Burrow',
       desc: 'Gundukan tanah gambut lembap yang sejuk bebas dari bara api bawah tanah.',
+      descEn: 'Cool, moist peat mounds free from underground embers.',
       icon: '🪨',
       x: 180,
       y: 660,
@@ -195,6 +219,7 @@ const WILDLIFE_MISSIONS = [
       name: 'Pohon Sarang Lebah Selatan',
       nameEn: 'Southern Giant Honey Hollow Tree',
       desc: 'Pohon tua berongga raksasa yang kaya sarang lebah hutan dan terlindung dari api.',
+      descEn: 'A giant old hollow tree full of wild beehives and sheltered from the flames.',
       icon: '🍯',
       x: 480,
       y: 680,
@@ -217,6 +242,7 @@ const WILDLIFE_MISSIONS = [
       name: 'Puncak Kanopi Bukit Utara',
       nameEn: 'Northern High Ridge Canopy',
       desc: 'Puncak tertinggi perbukitan hutan primer di mana udara bersih dari asap karhutla.',
+      descEn: 'The highest ridge of the primary forest, where the air is clear of wildfire smoke.',
       icon: '🌲',
       x: 520,
       y: 110,
@@ -230,36 +256,133 @@ const WILDLIFE_MISSIONS = [
   },
 ];
 
+/* ──────────────────────────────────────────────────────────────────────────
+   MISI DARI PETA: pemetaan spesies IUCN di peta → misi satwa di game,
+   dan preset tingkat kesulitan berdasarkan intensitas titik api terpilih.
+   ────────────────────────────────────────────────────────────────────────── */
+const SPECIES_TO_MISSION = {
+  'mouse-deer': 'kancil',
+  'lesser mouse deer': 'kancil',
+  'bornean-orangutan': 'tuki',
+  'bornean orangutan': 'tuki',
+  'sunda-pangolin': 'liku',
+  'sunda pangolin': 'liku',
+  'sun-bear': 'madu',
+  'sun bear': 'madu',
+  'helmeted-hornbill': 'rangkong',
+  'helmeted hornbill': 'rangkong',
+};
+
+// Titik api tambahan untuk level Sulit (tidak menutupi lokasi satwa maupun habitatnya)
+const EXTRA_HARD_HOTSPOTS = [
+  { id: 'f7', x: 300, y: 140, rx: 50, ry: 38, name: 'Api Loncat Lereng Barat Laut', nameEn: 'Northwest Slope Spot Fire', intensity: 0.9 },
+  { id: 'f8', x: 560, y: 330, rx: 48, ry: 36, name: 'Bara Gambut Tengah Hutan', nameEn: 'Mid-Forest Peat Embers', intensity: 0.95 },
+];
+
+const DIFFICULTY_PRESETS = {
+  easy: {
+    labelId: 'Mudah', labelEn: 'Easy', icon: '🟢',
+    hotspotIds: ['f1', 'f3', 'f4', 'f5'], sizeScale: 0.85,
+    time: 240, lives: 4, radar: 6,
+  },
+  medium: {
+    labelId: 'Sedang', labelEn: 'Medium', icon: '🟠',
+    hotspotIds: ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'], sizeScale: 1,
+    time: 180, lives: 3, radar: 4,
+  },
+  hard: {
+    labelId: 'Sulit', labelEn: 'Hard', icon: '🔴',
+    hotspotIds: ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8'], sizeScale: 1.15,
+    time: 150, lives: 2, radar: 3,
+  },
+};
+
+function buildHotspots(preset) {
+  return [...DEFAULT_FIRE_HOTSPOTS, ...EXTRA_HARD_HOTSPOTS]
+    .filter((f) => preset.hotspotIds.includes(f.id))
+    .map((f) => ({
+      ...f,
+      rx: f.rx * preset.sizeScale,
+      ry: f.ry * preset.sizeScale,
+      intensity: f.intensity * preset.sizeScale,
+    }));
+}
+
+/**
+ * Bangun konfigurasi game dari query string, mis.:
+ *   /game?mission=fire&level=hard&site=Ketapang&frp=21.6
+ *   /game?mission=animal&species=sun-bear&level=medium&site=Sebangau
+ */
+function buildGameConfig(searchParams) {
+  const mode = searchParams.get('mission');
+  const levelParam = searchParams.get('level');
+  const level = DIFFICULTY_PRESETS[levelParam] ? levelParam : 'medium';
+  const preset = DIFFICULTY_PRESETS[level];
+
+  let missions = WILDLIFE_MISSIONS;
+  let targetMission = null;
+  if (mode === 'animal') {
+    const speciesKey = String(searchParams.get('species') || '').toLowerCase().trim();
+    const missionId = SPECIES_TO_MISSION[speciesKey] || speciesKey;
+    targetMission = WILDLIFE_MISSIONS.find((m) => m.id === missionId) || null;
+    if (targetMission) missions = [targetMission];
+  }
+
+  return {
+    mode: mode === 'fire' || (mode === 'animal' && targetMission) ? mode : null,
+    level,
+    preset,
+    missions,
+    targetMission,
+    hotspots: buildHotspots(preset),
+    site: searchParams.get('site') || '',
+    frp: searchParams.get('frp') || '',
+  };
+}
+
 export default function GamePage() {
+  const location = useLocation();
+  const config = useMemo(
+    () => buildGameConfig(new URLSearchParams(location.search)),
+    [location.search],
+  );
+  // key → game di-remount bersih setiap kali misi dari peta berganti
+  return <RadarMissionGame key={location.search} config={config} />;
+}
+
+function RadarMissionGame({ config }) {
   const { locale } = useTranslation();
   const isId = locale === 'id';
+  const { missions, preset } = config;
+  const MAX_LIVES = preset.lives;
+  const MISSION_TIME = preset.time;
 
   const canvasRef = useRef(null);
 
   // Status Game
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(MAX_LIVES);
   const [rescuedCount, setRescuedCount] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(180); // 3 menit
+  const [timeRemaining, setTimeRemaining] = useState(MISSION_TIME);
   const [isPaused, setIsPaused] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [failReason, setFailReason] = useState('');
 
   // Skenario Titik Kebakaran Aktif (Dinamis / Bisa Banyak & Diacak)
-  const [fireHotspots, setFireHotspots] = useState(DEFAULT_FIRE_HOTSPOTS);
+  const [fireHotspots, setFireHotspots] = useState(config.hotspots);
 
   // Mode Layer Radar NISAR
   const [radarLayer, setRadarLayer] = useState('optical');
 
   // Pulsa Radar NISAR untuk Menembus Kabut Asap
   const [radarActive, setRadarActive] = useState(false);
-  const [radarCharges, setRadarCharges] = useState(4);
+  const [radarCharges, setRadarCharges] = useState(preset.radar);
   const radarWaveRef = useRef(0);
   const smokeParticlesRef = useRef([]);
 
   // Misi Satwa Aktif (Index 0 s.d 4)
   const [missionIndex, setMissionIndex] = useState(0);
-  const currentMission = WILDLIFE_MISSIONS[missionIndex];
+  const currentMission = missions[missionIndex];
 
   // Fase Satwa: 'SEARCHING' (Ranger harus mencari satwa) | 'FOLLOWING' (Satwa ditemukan & mengikuti ranger)
   const [animalState, setAnimalState] = useState('SEARCHING');
@@ -324,19 +447,33 @@ export default function GamePage() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  // Inisialisasi Partikel Kabut Asap Karhutla (65 Partikel Organik)
+  // Inisialisasi Partikel Kabut Asap Karhutla (140 Partikel Organik, lebih pekat)
   useEffect(() => {
     const smokes = [];
-    for (let i = 0; i < 65; i++) {
+    // Kabut asap merata di seluruh hutan
+    for (let i = 0; i < 90; i++) {
       smokes.push({
         x: Math.random() * 1000,
         y: Math.random() * 800,
-        radius: 45 + Math.random() * 60,
-        opacity: 0.38 + Math.random() * 0.42,
+        radius: 60 + Math.random() * 75,
+        opacity: 0.5 + Math.random() * 0.4,
         vx: 0.15 + Math.random() * 0.35,
         vy: -0.06 + (Math.random() - 0.5) * 0.15,
       });
     }
+    // Gumpalan asap tebal yang membubung dari setiap titik api
+    fireHotspots.forEach((fz) => {
+      for (let i = 0; i < 9; i++) {
+        smokes.push({
+          x: fz.x + (Math.random() - 0.5) * fz.rx * 1.6,
+          y: fz.y + (Math.random() - 0.5) * fz.ry * 1.6,
+          radius: 55 + Math.random() * 60,
+          opacity: 0.65 + Math.random() * 0.3,
+          vx: 0.1 + Math.random() * 0.3,
+          vy: -0.12 + (Math.random() - 0.5) * 0.12,
+        });
+      }
+    });
     smokeParticlesRef.current = smokes;
   }, [fireHotspots]);
 
@@ -437,9 +574,9 @@ export default function GamePage() {
 
   // Reset Sektor / Mulai Ulang Misi (Dengan Opsi Mengacak Titik Api Baru!)
   const restartMission = useCallback((randomizeFires = false) => {
-    setLives(3);
+    setLives(MAX_LIVES);
     setRescuedCount(0);
-    setTimeRemaining(180);
+    setTimeRemaining(MISSION_TIME);
     setIsPaused(false);
     setGameWon(false);
     setGameOver(false);
@@ -448,12 +585,12 @@ export default function GamePage() {
     setAnimalState('SEARCHING');
     setShowFoundModal(false);
     setRadarActive(false);
-    setRadarCharges(4);
+    setRadarCharges(preset.radar);
     radarWaveRef.current = 0;
 
     if (randomizeFires) {
       // Acak posisi titik api karhutla baru agar tantangan bervariasi!
-      const randomized = DEFAULT_FIRE_HOTSPOTS.map((f, i) => {
+      const randomized = config.hotspots.map((f, i) => {
         const jx = (Math.sin(Date.now() + i * 2.3) * 35);
         const jy = (Math.cos(Date.now() + i * 1.9) * 30);
         return {
@@ -479,18 +616,18 @@ export default function GamePage() {
     };
 
     animalPosRef.current = {
-      x: WILDLIFE_MISSIONS[0].lostPos.x,
-      y: WILDLIFE_MISSIONS[0].lostPos.y,
+      x: missions[0].lostPos.x,
+      y: missions[0].lostPos.y,
       angle: 0,
       walkCycle: 0,
     };
 
     setRangerDialogue(
       isId
-        ? `Fase 1: Cari keberadaan ${WILDLIFE_MISSIONS[0].name} yang tersesat di antara banyak titik kebakaran hutan!`
-        : `Phase 1: Search and find ${WILDLIFE_MISSIONS[0].nameEn} stranded between multiple wildfire hotspots!`
+        ? `Fase 1: Cari keberadaan ${missions[0].name} yang tersesat di antara banyak titik kebakaran hutan!`
+        : `Phase 1: Search and find ${missions[0].nameEn} stranded between multiple wildfire hotspots!`
     );
-  }, [isId]);
+  }, [isId, MAX_LIVES, MISSION_TIME, preset.radar, config.hotspots, missions]);
 
   // Navigasi Mengklik Peta Langsung
   const handleMapClick = (e) => {
@@ -574,7 +711,8 @@ export default function GamePage() {
     lastTimeRef.current = performance.now();
 
     const render = (now) => {
-      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
+      // Timestamp rAF bisa sedikit lebih awal dari performance.now() di frame pertama → jaga dt tidak negatif
+      const dt = Math.max(0, Math.min((now - lastTimeRef.current) / 1000, 0.1));
       lastTimeRef.current = now;
 
       const ranger = rangerRef.current;
@@ -633,12 +771,12 @@ export default function GamePage() {
             const nextCount = rescuedCount + 1;
             setRescuedCount(nextCount);
 
-            if (nextCount >= WILDLIFE_MISSIONS.length) {
+            if (nextCount >= missions.length) {
               setGameWon(true);
             } else {
               const nextIdx = missionIndex + 1;
               setMissionIndex(nextIdx);
-              const nextMission = WILDLIFE_MISSIONS[nextIdx];
+              const nextMission = missions[nextIdx];
 
               animal.x = nextMission.lostPos.x;
               animal.y = nextMission.lostPos.y;
@@ -669,13 +807,13 @@ export default function GamePage() {
               setFailReason(
                 isId
                   ? `Ranger terkena jilatan kobaran api di "${hitFire.name}"! Perhatikan sebaran titik api satelit.`
-                  : `Ranger was trapped by the flames at "${hitFire.name}"! Use SAR radar to dodge hotspots.`
+                  : `Ranger was trapped by the flames at "${hitFire.nameEn || hitFire.name}"! Use SAR radar to dodge hotspots.`
               );
             } else {
               setRangerDialogue(
                 isId
                   ? `Awas! Area "${hitFire.name}" sedang membara hebat! Mundur dan cari jalur yang aman.`
-                  : `Warning! "${hitFire.name}" is intensely burning! Retreat and find a safe corridor.`
+                  : `Warning! "${hitFire.nameEn || hitFire.name}" is intensely burning! Retreat and find a safe corridor.`
               );
               ranger.x -= Math.cos(ranger.angle) * 35;
               ranger.y -= Math.sin(ranger.angle) * 35;
@@ -842,7 +980,7 @@ export default function GamePage() {
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#000000';
       ctx.shadowBlur = 4;
-      ctx.fillText(hab.name, hab.x, hab.y + 36);
+      ctx.fillText(isId ? hab.name : hab.nameEn, hab.x, hab.y + 36);
       ctx.shadowBlur = 0;
       ctx.restore();
 
@@ -885,7 +1023,7 @@ export default function GamePage() {
         ctx.font = 'bold 9px sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText('CARI AKU!', 0, -26);
+        ctx.fillText(isId ? 'CARI AKU!' : 'FIND ME!', 0, -26);
       } else {
         ctx.strokeStyle = '#facc15';
         ctx.lineWidth = 2;
@@ -989,6 +1127,17 @@ export default function GamePage() {
       }
 
       // (K) PARTIKEL KABUT ASAP KARHUTLA & SINAR RADAR PENEMBUS KABUT NISAR
+      // Lapisan kabut asap merata (haze) di seluruh peta, sedikit terbuka di sekitar ranger
+      if (!radarActive) {
+        ctx.save();
+        const hazeGrad = ctx.createRadialGradient(ranger.x, ranger.y, 60, ranger.x, ranger.y, 260);
+        hazeGrad.addColorStop(0, 'rgba(48, 40, 33, 0)');
+        hazeGrad.addColorStop(1, 'rgba(48, 40, 33, 0.42)');
+        ctx.fillStyle = hazeGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
       if (smokeParticlesRef.current && smokeParticlesRef.current.length > 0) {
         ctx.save();
         smokeParticlesRef.current.forEach((sm) => {
@@ -1019,8 +1168,8 @@ export default function GamePage() {
 
           if (finalAlpha > 0.02) {
             const smokeGrad = ctx.createRadialGradient(sm.x, sm.y, 4, sm.x, sm.y, sm.radius);
-            smokeGrad.addColorStop(0, `rgba(45, 38, 32, ${finalAlpha * 0.88})`);
-            smokeGrad.addColorStop(0.5, `rgba(38, 30, 24, ${finalAlpha * 0.52})`);
+            smokeGrad.addColorStop(0, `rgba(45, 38, 32, ${Math.min(1, finalAlpha * 0.95)})`);
+            smokeGrad.addColorStop(0.5, `rgba(38, 30, 24, ${finalAlpha * 0.65})`);
             smokeGrad.addColorStop(1, 'rgba(25, 20, 16, 0)');
             ctx.fillStyle = smokeGrad;
             ctx.beginPath();
@@ -1107,7 +1256,7 @@ export default function GamePage() {
     return () => {
       if (animIdRef.current) cancelAnimationFrame(animIdRef.current);
     };
-  }, [treeCanopyData, radarLayer, missionIndex, currentMission, animalState, rescuedCount, gameOver, gameWon, isPaused, showFoundModal, fireHotspots, radarActive, isId]);
+  }, [treeCanopyData, radarLayer, missionIndex, currentMission, animalState, rescuedCount, gameOver, gameWon, isPaused, showFoundModal, fireHotspots, radarActive, isId, missions]);
 
   /* ──────────────────────────────────────────────────────────────────────────
      METRIK HASIL AKHIR MISI YANG DINAMIS & BERVARIASI (DYNAMIC MISSION ENDING)
@@ -1119,12 +1268,14 @@ export default function GamePage() {
     let rankTitleEn = '🏆 Legend of Borneo Peatlands';
     let badgeColor = 'from-amber-400 to-yellow-500';
 
-    if (lives === 2 || timeRemaining < 60) {
+    const livesLost = MAX_LIVES - lives;
+    if (livesLost === 1 || timeRemaining < 60) {
       stars = 2;
       rankTitleId = '🌟 Pahlawan Penyelamat Tangguh';
       rankTitleEn = '🌟 Resilient Wildlife Guardian';
       badgeColor = 'from-emerald-400 to-teal-500';
-    } else if (lives === 1 || timeRemaining < 30) {
+    }
+    if (livesLost >= 2 || timeRemaining < 30) {
       stars = 1;
       rankTitleId = '🎖️ Ranger Konservasi Pemberani';
       rankTitleEn = '🎖️ Brave Conservation Ranger';
@@ -1143,9 +1294,9 @@ export default function GamePage() {
       badgeColor,
       restorationScore,
       aqiSaved,
-      elapsedTime: formatTime(180 - timeRemaining),
+      elapsedTime: formatTime(MISSION_TIME - timeRemaining),
     };
-  }, [lives, timeRemaining, isId]);
+  }, [lives, timeRemaining, isId, MAX_LIVES, MISSION_TIME]);
 
   return (
     <div className="min-h-screen bg-[#07130b] text-cream-100 py-4 px-2 sm:px-6 font-sans selection:bg-amber-400 selection:text-charcoal-900">
@@ -1169,6 +1320,42 @@ export default function GamePage() {
           </div>
         </div>
 
+        {/* ── BANNER MISI DARI PETA ── */}
+        {config.mode && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/50 bg-gradient-to-r from-[#2a1306] via-[#1a1a08] to-[#0a1b10] px-4 py-2.5 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-amber-400 px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase text-charcoal-950">
+                🗺️ {isId ? 'Misi dari Peta' : 'Map Mission'}
+              </span>
+              {config.mode === 'fire' ? (
+                <span className="font-bold text-cream-100">
+                  🔥 {isId ? 'Titik api' : 'Hotspot'}{' '}
+                  <span className="text-amber-300">{config.site || (isId ? 'terpilih' : 'selected')}</span>
+                  {config.frp && <span className="font-mono text-red-300"> · FRP {config.frp} MW</span>}
+                </span>
+              ) : (
+                <span className="font-bold text-cream-100">
+                  {config.targetMission.emoji} {isId ? 'Selamatkan' : 'Rescue'}{' '}
+                  <span className="text-amber-300">{isId ? config.targetMission.name : config.targetMission.nameEn}</span>
+                  {config.site && <span className="text-emerald-300/80"> · {config.site}</span>}
+                </span>
+              )}
+              <span className="rounded-full border border-white/20 bg-black/40 px-2 py-0.5 font-mono text-[10px] font-bold text-cream-100">
+                {preset.icon} {isId ? `Level ${preset.labelId}` : `${preset.labelEn} level`} · ❤️{MAX_LIVES} · ⏱️{formatTime(MISSION_TIME)} · 📡{preset.radar}x
+              </span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[11px]">
+              <Link to="/map" className="text-emerald-300 hover:text-emerald-200">
+                ← {isId ? 'Kembali ke Peta' : 'Back to Map'}
+              </Link>
+              <span className="text-emerald-700">|</span>
+              <Link to="/game" className="text-cream-200/70 hover:text-cream-100">
+                {isId ? 'Mode Bebas' : 'Free Play'}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* CONTAINER UTAMA GAME */}
         <div className="relative w-full rounded-3xl overflow-hidden border-2 border-emerald-700/70 shadow-2xl bg-[#030a05]">
           {/* ── TOP HUD (❤️ 3 | 🐾 0/5 | ⏱️ 03:00 | ⏸️) ── */}
@@ -1182,7 +1369,7 @@ export default function GamePage() {
 
               <div className="flex items-center gap-1.5 bg-[#0a1b10]/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-emerald-600/50 shadow-lg font-mono text-sm font-bold text-amber-300">
                 <span className="text-base">🐾</span>
-                <span>{rescuedCount}/5</span>
+                <span>{rescuedCount}/{missions.length}</span>
               </div>
 
               <div className="flex items-center gap-1.5 bg-[#0a1b10]/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-emerald-600/50 shadow-lg font-mono text-sm font-bold text-cream-100">
@@ -1379,7 +1566,7 @@ export default function GamePage() {
             <div className="bg-[#0b1c11] max-w-lg w-full rounded-3xl border-2 border-amber-400 shadow-2xl p-6 text-center text-cream-50">
               <div className="text-6xl my-2 animate-bounce">{currentMission.emoji}</div>
               <h2 className="font-hand text-3xl font-bold text-amber-300 mt-2">
-                {currentMission.name} {isId ? 'Ditemukan!' : 'Discovered!'}
+                {isId ? `${currentMission.name} Ditemukan!` : `${currentMission.nameEn} Discovered!`}
               </h2>
               <div className="text-xs text-emerald-400 font-mono mt-1">
                 {currentMission.species}
@@ -1394,8 +1581,12 @@ export default function GamePage() {
                   <span>{currentMission.habitat.icon}</span>
                   <span>{isId ? 'Target Habitat Asli:' : 'Target Natural Habitat:'}</span>
                 </div>
-                <p className="text-cream-200 font-bold">{currentMission.habitat.name}</p>
-                <p className="text-emerald-300/80 text-[11px]">{currentMission.habitat.desc}</p>
+                <p className="text-cream-200 font-bold">
+                  {isId ? currentMission.habitat.name : currentMission.habitat.nameEn}
+                </p>
+                <p className="text-emerald-300/80 text-[11px]">
+                  {isId ? currentMission.habitat.desc : currentMission.habitat.descEn}
+                </p>
               </div>
 
               <button
@@ -1423,9 +1614,13 @@ export default function GamePage() {
               </div>
 
               <p className="font-serif italic text-emerald-200 text-xs sm:text-sm mt-1">
-                {isId
-                  ? 'Semua satwa telah berhasil dipulangkan ke habitat aslinya melewati berbagai kepungan api karhutla!'
-                  : 'All wildlife have returned safely to their natural habitats through multi-front wildfires!'}
+                {config.mode === 'animal'
+                  ? isId
+                    ? `${config.targetMission.name} berhasil dipulangkan ke habitat aslinya melewati kepungan api karhutla!`
+                    : `${config.targetMission.nameEn} returned safely to its natural habitat through the wildfires!`
+                  : isId
+                    ? 'Semua satwa telah berhasil dipulangkan ke habitat aslinya melewati berbagai kepungan api karhutla!'
+                    : 'All wildlife have returned safely to their natural habitats through multi-front wildfires!'}
               </p>
 
               {/* Ringkasan Skor & Dampak Lingkungan Nyata */}
@@ -1440,7 +1635,7 @@ export default function GamePage() {
                     <span className="text-base">🐾</span>
                     <div>
                       <div className="text-[10px] text-cream-200/70">{isId ? 'Satwa Selamat' : 'Rescued'}</div>
-                      <strong className="text-amber-400 font-mono">5 / 5 Satwa</strong>
+                      <strong className="text-amber-400 font-mono">{isId ? `${missions.length} / ${missions.length} Satwa` : `${missions.length} / ${missions.length} Animals`}</strong>
                     </div>
                   </div>
 
@@ -1456,7 +1651,7 @@ export default function GamePage() {
                     <span className="text-base">❤️</span>
                     <div>
                       <div className="text-[10px] text-cream-200/70">{isId ? 'Sisa Nyawa Ranger' : 'Lives Left'}</div>
-                      <strong className="text-red-400 font-mono">{lives} / 3</strong>
+                      <strong className="text-red-400 font-mono">{lives} / {MAX_LIVES}</strong>
                     </div>
                   </div>
 
@@ -1484,7 +1679,7 @@ export default function GamePage() {
                   {isId ? 'Kisah Satwa di Habitat Aslinya:' : 'Wildlife in Their Natural Homes:'}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-sans">
-                  {WILDLIFE_MISSIONS.slice(0, 4).map((m) => (
+                  {missions.slice(0, 4).map((m) => (
                     <div key={m.id} className="p-2 rounded-xl bg-black/40 border border-emerald-900/60 flex items-start gap-2">
                       <span className="text-xl shrink-0">{m.emoji}</span>
                       <p className="text-cream-200/80 leading-tight">
@@ -1517,6 +1712,15 @@ export default function GamePage() {
                 >
                   {isId ? 'Beranda 🏠' : 'Home 🏠'}
                 </Link>
+
+                {config.mode && (
+                  <Link
+                    to="/map"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-950 border border-amber-600 text-amber-200 font-bold text-xs sm:text-sm hover:bg-amber-900 transition-colors"
+                  >
+                    {isId ? 'Misi Lain di Peta 🗺️' : 'More Map Missions 🗺️'}
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -1549,25 +1753,29 @@ export default function GamePage() {
         <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-[#09180e] p-4 rounded-2xl border border-emerald-900/80 text-xs">
             <h3 className="font-bold text-amber-300 mb-1 flex items-center gap-1.5 font-mono">
-              <span>🛰️</span> Mengapa Radar NISAR?
+              <span>🛰️</span> {isId ? 'Mengapa Radar NISAR?' : 'Why NISAR Radar?'}
             </h3>
             <p className="text-emerald-200/80 leading-relaxed font-sans">
-              Gelombang mikro L-band NISAR (~24 cm) berukuran jauh lebih besar daripada partikel asap aerosol karhutla, sehingga mampu menembus kabut asap secara instan untuk memetakan tajuk pohon dan mengarahkan jalur evakuasi satwa.
+              {isId
+                ? 'Gelombang mikro L-band NISAR (~24 cm) berukuran jauh lebih besar daripada partikel asap aerosol karhutla, sehingga mampu menembus kabut asap secara instan untuk memetakan tajuk pohon dan mengarahkan jalur evakuasi satwa.'
+                : "NISAR's L-band microwaves (~24 cm) are far larger than wildfire smoke aerosol particles, so they pass straight through the haze to map the tree canopy and guide wildlife evacuation routes."}
             </p>
           </div>
 
           <div className="bg-[#09180e] p-4 rounded-2xl border border-emerald-900/80 text-xs">
             <h3 className="font-bold text-emerald-300 mb-1 flex items-center gap-1.5 font-mono">
-              <span>🦧</span> 5 Satwa & Habitat Aslinya
+              <span>🦧</span> {isId ? '5 Satwa & Habitat Aslinya' : '5 Animals & Their Natural Habitats'}
             </h3>
             <p className="text-emerald-200/80 leading-relaxed font-sans">
-              Kancil di semak riparian sejuk, Orangutan di kanopi pohon ulin tenggara, Trenggiling di liang bukit lembap, Beruang Madu di pohon sarang lebah raksasa, dan Enggang Gading di puncak bukit utara.
+              {isId
+                ? 'Kancil di semak riparian sejuk, Orangutan di kanopi pohon ulin tenggara, Trenggiling di liang bukit lembap, Beruang Madu di pohon sarang lebah raksasa, dan Enggang Gading di puncak bukit utara.'
+                : 'The mouse deer in cool riverside shrubs, the orangutan in the southeast ironwood canopy, the pangolin in a moist hill burrow, the sun bear in a giant beehive tree, and the helmeted hornbill on the northern ridge.'}
             </p>
           </div>
 
           <div className="bg-[#09180e] p-4 rounded-2xl border border-emerald-900/80 text-xs">
             <h3 className="font-bold text-cream-100 mb-1 flex items-center gap-1.5 font-mono">
-              <span>🌍</span> Sasaran SDGs PBB
+              <span>🌍</span> {isId ? 'Sasaran SDGs PBB' : 'UN SDG Targets'}
             </h3>
             <div className="grid grid-cols-3 gap-2 mt-2">
               <SdgMark n={15} caption={isId ? 'Habitat' : 'Life on Land'} compact />

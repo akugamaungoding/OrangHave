@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 
 // Global Styles (Tailwind v4, Google fonts, paper texture & animations)
 import './styles/index.css';

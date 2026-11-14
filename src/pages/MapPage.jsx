@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useFireData, useProtectedAreas } from "../hooks";
@@ -84,6 +84,41 @@ const WILDLIFE_ART_MAP = {
 function getWildlifeArtUrl(speciesIdOrName = "") {
   const key = String(speciesIdOrName).toLowerCase().trim();
   return WILDLIFE_ART_MAP[key] || "/assets/art/orangutan.svg";
+}
+
+// Tingkat kesulitan game Radar Mission berdasarkan intensitas titik api (FRP & suhu kecerahan)
+const GAME_LEVEL_LABELS = {
+  easy: { label: "Mudah", icon: "🟢", color: "#15803d" },
+  medium: { label: "Sedang", icon: "🟠", color: "#c2410c" },
+  hard: { label: "Sulit", icon: "🔴", color: "#b91c1c" },
+};
+
+function getFireGameLevel(frpVal, tempK) {
+  const frp = Number(frpVal) || 0;
+  const t = Number(tempK) || 0;
+  if (frp >= 15 || t >= 360) return "hard";
+  if (frp >= 5 || t >= 340) return "medium";
+  return "easy";
+}
+
+// Satwa yang dekat titik api → misi penyelamatan lebih sulit
+function getWildlifeGameLevel(nearestFireKm) {
+  if (nearestFireKm === null || nearestFireKm === undefined) return "medium";
+  if (nearestFireKm <= 25) return "hard";
+  if (nearestFireKm <= 80) return "medium";
+  return "easy";
+}
+
+function buildGameUrl(params) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") q.set(k, String(v));
+  });
+  return `/game?${q.toString()}`;
+}
+
+function escapeHtml(str = "") {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
 
 // 2 Fase Perbandingan Lahan: Historis Sebelum Kebakaran (Arsip Satelit 2014) vs Sekarang Ketika Terbakar
@@ -500,6 +535,7 @@ function buildNasaBasemapStyle() {
 
 export default function MapPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
@@ -514,6 +550,7 @@ export default function MapPage() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [sarBand, setSarBand] = useState("l-band");
   const [panelMinimized, setPanelMinimized] = useState(false);
+  const [gameHintVisible, setGameHintVisible] = useState(true);
   const [notebookOpen, setNotebookOpen] = useState(false);
   const [activeBookmark, setActiveBookmark] = useState("cover");
   const [selectedFeature, setSelectedFeature] = useState(null);
@@ -933,6 +970,13 @@ export default function MapPage() {
       nearestFireKm,
       nearestFireLocation,
       nearestNdvi,
+      gameLevel: getWildlifeGameLevel(nearestFireKm),
+      gameUrl: buildGameUrl({
+        mission: "animal",
+        species: matchedSpecies.id || occ.species,
+        level: getWildlifeGameLevel(nearestFireKm),
+        site: occ.locality || occ.province || "",
+      }),
     });
     setActiveWildlifeTab("profil");
     setNotebookOpen(true);
@@ -1014,6 +1058,15 @@ export default function MapPage() {
       habitatTrees: mlScores?.random_forest_habitat?.n_trees ?? 48,
     };
 
+    const gameLevel = getFireGameLevel(frpVal, tempK);
+    const gameLevelMeta = GAME_LEVEL_LABELS[gameLevel];
+    const gameUrl = buildGameUrl({
+      mission: "fire",
+      level: gameLevel,
+      site: hotspot.kabupaten || hotspot.provinsi || "",
+      frp: frpVal,
+    });
+
     setSelectedWildlife(null);
     setActiveBookmark("cover");
     setNotebookOpen(true);
@@ -1093,6 +1146,14 @@ export default function MapPage() {
                 ${speciesBadgesHtml}
               </div>
             </div>
+
+            <button type="button" data-radar-mission-play
+              style="margin-top: 8px; width: 100%; cursor: pointer; border: 0; border-radius: 10px; padding: 8px 10px; background: linear-gradient(90deg, #f59e0b 0%, #dc2626 100%); color: #fff; font-family: ui-sans-serif, system-ui, sans-serif; text-align: left; box-shadow: 0 2px 6px rgba(220,38,38,0.35);">
+              <div style="font-size: 12px; font-weight: 800; line-height: 1.2;">🎮 Main Radar Mission di Titik Ini</div>
+              <div style="font-size: 9.5px; font-weight: 700; opacity: 0.95; margin-top: 2px;">
+                Tingkat kesulitan: ${gameLevelMeta.icon} ${gameLevelMeta.label} · FRP ${escapeHtml(frpVal)} MW · ${tempC}°C
+              </div>
+            </button>
           </div>
         </div>
       `;
@@ -1111,6 +1172,13 @@ export default function MapPage() {
       const popupEl = popupInstance.getElement();
       if (popupEl) {
         popupEl.style.zIndex = "100";
+        const playBtn = popupEl.querySelector("[data-radar-mission-play]");
+        if (playBtn) {
+          playBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            navigate(gameUrl);
+          });
+        }
       }
       popupRef.current = popupInstance;
 
@@ -1436,7 +1504,7 @@ export default function MapPage() {
       wrapperEl.style.cursor = "pointer";
       wrapperEl.style.userSelect = "none";
       wrapperEl.style.zIndex = isHigh ? "2" : "1";
-      wrapperEl.title = `🔥 ${hotspot.kabupaten || "Wildfire Hotspot"} (${hotspot.provinsi || "Indonesia"}) — Klik untuk lihat dampak ekosistem`;
+      wrapperEl.title = `🔥 ${hotspot.kabupaten || "Wildfire Hotspot"} (${hotspot.provinsi || "Indonesia"}) — Klik untuk lihat dampak ekosistem & main Radar Mission 🎮`;
 
       const innerEl = document.createElement("div");
       innerEl.innerHTML = getFirePinSvg(w, h);
@@ -1481,7 +1549,7 @@ export default function MapPage() {
         pinWrap.style.cursor = "pointer";
         pinWrap.style.userSelect = "none";
         pinWrap.style.zIndex = "3";
-        pinWrap.title = `${occ.species} (${occ.scientific_name}) — ${occ.locality}. Klik untuk buka Buku Panduan Satwa`;
+        pinWrap.title = `${occ.species} (${occ.scientific_name}) — ${occ.locality}. Klik untuk buka Buku Panduan Satwa & misi penyelamatan 🎮`;
 
         pinWrap.innerHTML = `
           <div style="position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); transition: transform 0.15s ease;">
@@ -2223,6 +2291,25 @@ export default function MapPage() {
                         </button>
                       </div>
 
+                      {/* Tombol Misi Penyelamatan Satwa di Game Radar Mission */}
+                      <button
+                        type="button"
+                        onClick={() => navigate(selectedWildlife.gameUrl)}
+                        className="mb-2.5 w-full cursor-pointer rounded-lg border border-[#15803d]/50 bg-gradient-to-r from-[#15803d] to-[#0d9488] px-3 py-2 text-left text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]"
+                      >
+                        <div className="text-[12px] font-extrabold leading-tight">
+                          🎮 Misi Radar: Selamatkan {selectedWildlife.commonName}
+                        </div>
+                        <div className="mt-0.5 font-mono text-[9.5px] font-bold opacity-90">
+                          Tingkat kesulitan:{" "}
+                          {GAME_LEVEL_LABELS[selectedWildlife.gameLevel].icon}{" "}
+                          {GAME_LEVEL_LABELS[selectedWildlife.gameLevel].label}
+                          {selectedWildlife.nearestFireKm !== null
+                            ? ` · api terdekat ±${selectedWildlife.nearestFireKm} km`
+                            : ""}
+                        </div>
+                      </button>
+
                       {/* WILDLIFE TAB 1: PROFIL SATWA */}
                       {activeWildlifeTab === "profil" && (
                         <div className="space-y-2.5">
@@ -2931,6 +3018,31 @@ export default function MapPage() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== PETUNJUK: BISA MAIN GAME DARI PETA ==================== */}
+        {!isEmbed && !playerOpen && gameHintVisible && (
+          <div className="pointer-events-none absolute bottom-10 left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-[520px] -translate-x-1/2">
+            <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-[#c89d54]/70 bg-gradient-to-r from-[#163a28] via-[#1c4732] to-[#112d1f] px-3.5 py-2.5 text-[#faf6ee] shadow-[0_14px_36px_rgba(0,0,0,0.5),3px_3px_0_#c89d54]">
+              <span className="flex h-9 w-9 shrink-0 animate-pulse items-center justify-center rounded-xl bg-amber-400 text-lg shadow-sm">🎮</span>
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="text-[12px] font-extrabold text-amber-300">
+                  Bisa main game Radar Mission langsung dari peta!
+                </div>
+                <div className="mt-0.5 text-[10.5px] font-semibold text-[#e7decb]">
+                  Klik titik api 🔥 untuk misi dengan tingkat kesulitan sesuai intensitas apinya, atau klik satwa 🐾 untuk misi menyelamatkan satwa tersebut.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGameHintVisible(false)}
+                aria-label="Tutup petunjuk game"
+                className="shrink-0 cursor-pointer rounded-md px-1.5 text-sm font-bold text-[#e7decb] hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
