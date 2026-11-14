@@ -87,6 +87,120 @@ function getWildlifeArtUrl(speciesIdOrName = "") {
   return WILDLIFE_ART_MAP[key] || "/assets/art/orangutan.svg";
 }
 
+const WILDLIFE_PHOTO_MAP = {
+  "bornean-orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "bornean orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "sunda-pangolin":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Pangolin_borneo.jpg?width=480",
+  "sunda pangolin":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Pangolin_borneo.jpg?width=480",
+  "sun-bear":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Sun_Bear.jpg?width=480",
+  "sun bear":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Sun_Bear.jpg?width=480",
+  "mouse-deer":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Adult_Lesser_mouse-deer_(Tragulus_kanchil),_Singapore_-_20141001.jpg?width=480",
+  "lesser mouse deer":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Adult_Lesser_mouse-deer_(Tragulus_kanchil),_Singapore_-_20141001.jpg?width=480",
+  "helmeted-hornbill":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+  "helmeted hornbill":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+  "sumatran tiger":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Panthera_tigris_sumatrae.jpg?width=480",
+  "sumatran elephant":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Elephant_Sumatra_ProfilG.jpg?width=480",
+  "sumatran orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "javan hawk-eagle":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Nisaetus_bartelsi_(Elang_Jawa).jpg?width=480",
+  "javan leopard":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Panthera_pardus_melas_(Tierpark_Berlin)_-_1009-891-(118).jpg?width=480",
+  "komodo dragon":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Varanus_komodoensis.JPG?width=480",
+  "yellow-crested cockatoo":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+};
+
+function getWildlifePhotoUrl(speciesIdOrName = "") {
+  const key = String(speciesIdOrName).toLowerCase().trim();
+  return WILDLIFE_PHOTO_MAP[key] || getWildlifeArtUrl(speciesIdOrName);
+}
+
+// Profil cadangan untuk spesies di luar iucn-species.json (Sumatra, Jawa, Nusa Tenggara)
+const WILDLIFE_SPECIES_PROFILES = {
+  "sumatran tiger": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Apex Predator of Sumatran Peatlands",
+    habitat:
+      "Lowland tropical rainforest, peat swamp forests, and montane forest corridors in Sumatra",
+    description:
+      "Fewer than 400 Sumatran tigers remain in the wild. Peatland fires and forest clearing fragment their large territories, pushing tigers closer to plantation edges.",
+    threats: [
+      "peatland fires",
+      "habitat fragmentation",
+      "snare poaching",
+      "human-wildlife conflict",
+    ],
+  },
+  "sumatran elephant": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Keystone Seed Disperser",
+    habitat:
+      "Lowland broadleaf forests, peat swamps, and savanna fringes across Sumatra",
+    description:
+      "Sumatran elephants migrate along ancient riverine and peat corridors. Fires destroy forage plants and force herds into agricultural zones.",
+    threats: [
+      "habitat loss",
+      "fire & smoke haze",
+      "corridor blocking",
+      "human-elephant conflict",
+    ],
+  },
+  "javan hawk-eagle": {
+    red_list_status: "EN",
+    red_list_category: "Endangered",
+    population_trend: "decreasing",
+    story_role: "Canopy Raptor of Java (Garuda)",
+    habitat:
+      "Montane and sub-montane tropical forests on volcanic slopes across Java",
+    description:
+      "Endemic to Java and the inspiration for Indonesia's national emblem. Dry-season highland fires destroy tall emergent nesting trees.",
+    threats: [
+      "montane forest fire",
+      "habitat fragmentation",
+      "illegal wildlife trade",
+    ],
+  },
+  "javan leopard": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Last Big Cat of Java",
+    habitat:
+      "Dense montane rainforests, teak-forest buffers, and volcanic reserves in Java",
+    description:
+      "The sole remaining large carnivore on Java. Wildfire and drought shrink prey density and isolate small populations across fragmented mountain parks.",
+    threats: ["forest fires", "habitat loss", "prey depletion", "poaching"],
+  },
+  "komodo dragon": {
+    red_list_status: "EN",
+    red_list_category: "Endangered",
+    population_trend: "stable",
+    story_role: "Apex Savanna Reptile",
+    habitat: "Dry tropical savanna, monsoon forests, and coastal scrublands",
+    description:
+      "Savanna grass fires during dry monsoon peaks reduce deer prey availability and scorch ground-nesting burrows.",
+    threats: ["savanna wildfires", "prey decline", "climate warming"],
+  },
+};
+
 // Tingkat kesulitan game Radar Mission berdasarkan intensitas titik api (FRP & suhu kecerahan)
 const GAME_LEVEL_LABELS = {
   easy: { label: "Mudah", icon: "🟢", color: "#15803d" },
