@@ -18,6 +18,49 @@ import {
   buildIndonesiaWildlifeHabitatsGeoJSON,
 } from "../nasaScraper";
 
+// 2 Fase Perbandingan Lahan: Historis Sebelum Kebakaran (Arsip Satelit 2014) vs Sekarang Ketika Terbakar
+const SAR_TIMELINE_PHASES = [
+  {
+    id: 0,
+    short: "Sebelum Kebakaran (2014)",
+    title: "Sebelum Kebakaran · Arsip 2014",
+    badge: "Volume Scattering • ~ -6.2 dB",
+    color: "#16a34a",
+    zoneColor: "#16a34a",
+    zoneBorder: "#4ade80",
+    zoneOpacity: 0.24,
+    smokeOpacity: 0,
+    ratio: 0,
+    desc: "Citra satelit historis (Esri Wayback 2014) sebelum kebakaran: kanopi hutan utuh, gambut lembap, & koridor satwa terhubung.",
+  },
+  {
+    id: 1,
+    short: "Sekarang (Ketika Terbakar)",
+    title: "Sekarang · Ketika Terbakar",
+    badge: "Surface Drop • -18.5 dB",
+    color: "#dc2626",
+    zoneColor: "#7f1d1d",
+    zoneBorder: "#f97316",
+    zoneOpacity: 0.54,
+    smokeOpacity: 0.72,
+    ratio: 1,
+    desc: "Citra satelit terkini dengan titik api aktif, kabut asap (ditembus Radar SAR), & bekas luka bakar (burn scar) di lokasi.",
+  },
+];
+
+const SAR_BAND_MODES = {
+  "l-band": {
+    id: "l-band",
+    label: "NISAR L-Band (24cm)",
+    detail: "Menembus kanopi hingga tanah gambut & mendeteksi pengeringan bawah permukaan.",
+  },
+  "c-band": {
+    id: "c-band",
+    label: "Sentinel-1 C-Band (5.6cm)",
+    detail: "Sensitif terhadap perubahan struktur tajuk atas & hilangnya tutupan daun.",
+  },
+};
+
 // Region Focus: 100% Indonesian Archipelago
 const REGION_COORDINATES = {
   indonesia: {
@@ -165,12 +208,12 @@ const SAR_SWATH_GEOJSON = {
 };
 
 /**
- * Menghasilkan SVG Ikon Pin Kebakaran NASA Worldview (persis seperti gambar lampiran pengguna):
+ * Menghasilkan SVG Ikon Pin Kebakaran:
  * - Pin bulat berbingkai putih + garis tepi gelap tipis dengan ujung lancip (V-tip) di bawah
- * - Lingkaran dalam merah bata khas NASA Worldview (#983226)
+ * - Lingkaran dalam merah bata (#983226)
  * - Siluet kobaran api putih 3 lidah api dengan inti merah bata di bawahnya
  */
-function getNasaWorldviewPinSvg(width = 34, height = 40) {
+function getFirePinSvg(width = 34, height = 40) {
   return `
     <svg viewBox="0 0 40 46" width="${width}" height="${height}" style="display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.65)); pointer-events: none;">
       <path
@@ -200,20 +243,87 @@ function getNasaWorldviewPinSvg(width = 34, height = 40) {
   `;
 }
 
-/**
- * Membangun URL NASA Worldview persis seperti format URL dari pengguna
- */
-function buildNasaWorldviewUrl(
-  lon = 113.8,
-  lat = -1.8,
-  eonetId = "EONET_26285",
-  dateStr = "2024-09-18",
-) {
-  const minLon = (lon - 5.5).toFixed(6);
-  const minLat = (lat - 3.2).toFixed(6);
-  const maxLon = (lon + 5.5).toFixed(6);
-  const maxLat = (lat + 3.2).toFixed(6);
-  return `https://worldview.earthdata.nasa.gov/?v=${minLon},${minLat},${maxLon},${maxLat}&e=${eonetId},${dateStr}&efs=true&efa=false&efc=dustHaze,manmade,seaLakeIce,severeStorms,snow,volcanoes,waterColor,floods,wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor&lg=false`;
+function Stabilo({ color = "yellow", children }) {
+  const palette = {
+    yellow: "rgba(253, 224, 71, 0.58)",
+    green: "rgba(134, 239, 172, 0.52)",
+    blue: "rgba(125, 211, 252, 0.50)",
+    pink: "rgba(253, 164, 175, 0.48)",
+  };
+  const bg = palette[color] || palette.yellow;
+  return (
+    <mark
+      className="rounded-[2px] px-1 py-0.5 font-semibold text-[#111814]"
+      style={{
+        background: `linear-gradient(104deg, transparent 0.5%, ${bg} 3%, ${bg} 96%, transparent 99%)`,
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+      }}
+    >
+      {children}
+    </mark>
+  );
+}
+
+function buildImpactTranslation({
+  tempK,
+  frpVal,
+  sarDb,
+  sarDrop,
+  landType,
+  smi,
+  fwi,
+  windSpeedMs,
+  windCompass,
+  wildlifeScope,
+}) {
+  const isPeat = /peat|gambut|swamp/i.test(landType || "");
+  const isHighEnergy = Number(frpVal) >= 35 || tempK >= 355;
+  const isDrySoil = smi <= 0.3;
+
+  const sarHeadline = isHighEnergy
+    ? "Penipisan kanopi & anomali panas tinggi"
+    : "Gangguan vegetasi aktif terdeteksi SAR";
+
+  const sarInterpretation = isHighEnergy
+    ? `Penurunan pantulan balik SAR (${sarDb} dB, Δ ${sarDrop} dB) dan energi radiatif ${frpVal} MW menandakan kanopi menipis drastis di balik kabut asap.`
+    : `Anomali termal (${tempK} K) disertai penurunan koherensi SAR (${sarDb} dB) menunjukkan gangguan vegetasi aktif yang tetap terbaca menembus awan dan asap.`;
+
+  const peatHeadline = isPeat
+    ? isDrySoil
+      ? "Gambut kering — risiko smoldering"
+      : "Zona gambut terpantau lembap"
+    : isDrySoil
+      ? "Tanah kering — rawan rambatan api"
+      : "Kelembapan tanah relatif moderat";
+
+  const peatImpact = isPeat
+    ? `Lahan gambut dengan kelembapan ${smi} rentan mengalami kebakaran bawah permukaan (smoldering) yang sulit padam serta melepas karbon tersimpan.`
+    : isDrySoil
+      ? `Kelembapan tanah rendah (SMI ${smi}, FWI ${fwi}) mempercepat pengeringan serasah hutan dan meningkatkan risiko rambatan api ke koridor air.`
+      : `Kelembapan tanah moderat (SMI ${smi}) dengan indeks risiko api FWI ${fwi}, tetap memerlukan pemantauan kanal dan tepi hutan.`;
+
+  const primaryCorridor =
+    wildlifeScope?.corridorName || "Koridor Hutan & Gambut Terdekat";
+  const speciesCount = wildlifeScope?.speciesList?.length || 0;
+  const wildlifeHeadline = `${speciesCount} spesies dilindungi dalam radius ${wildlifeScope?.radiusKm || 60} km`;
+  const wildlifeImpact = `${wildlifeScope?.impactSummary || "Koridor habitat terancam fragmentasi dan paparan asap pekat."} Fokus pantauan: ${primaryCorridor}.`;
+
+  const communityHeadline = `Sebaran asap mengarah ke ${windCompass}`;
+  const communityImpact = `Angin ${windCompass} berkecepatan ${windSpeedMs} m/s berpotensi membawa partikulat asap ke permukiman hilir dan wilayah udara sekitar.`;
+
+  return {
+    isPeat,
+    isHighEnergy,
+    sarHeadline,
+    sarInterpretation,
+    peatHeadline,
+    peatImpact,
+    wildlifeHeadline,
+    wildlifeImpact,
+    communityHeadline,
+    communityImpact,
+  };
 }
 
 /**
@@ -233,18 +343,19 @@ function buildNasaBasemapStyle() {
         attribution:
           "NASA Earthdata Worldview (EONET / MODIS / VIIRS) • Esri World Imagery",
       },
+      "historical-satellite-tiles": {
+        type: "raster",
+        tiles: [
+          "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/10/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+        maxzoom: 18,
+        attribution: "Esri World Imagery Wayback (2014-02-20 Archive)",
+      },
       "boundaries-places": {
         type: "raster",
         tiles: [
           "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-        ],
-        tileSize: 256,
-        maxzoom: 18,
-      },
-      "topo-tiles": {
-        type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
         ],
         tileSize: 256,
         maxzoom: 18,
@@ -283,6 +394,17 @@ function buildNasaBasemapStyle() {
         },
       },
       {
+        id: "raster-satellite-historical",
+        type: "raster",
+        source: "historical-satellite-tiles",
+        layout: { visibility: "none" },
+        paint: {
+          "raster-opacity": 0.98,
+          "raster-contrast": 0.08,
+          "raster-saturation": 0.12,
+        },
+      },
+      {
         id: "raster-dark-radar",
         type: "raster",
         source: "satellite-tiles",
@@ -293,15 +415,6 @@ function buildNasaBasemapStyle() {
           "raster-brightness-min": 0.03,
           "raster-contrast": 0.35,
           "raster-saturation": -0.45,
-        },
-      },
-      {
-        id: "raster-topo",
-        type: "raster",
-        source: "topo-tiles",
-        layout: { visibility: "none" },
-        paint: {
-          "raster-opacity": 0.94,
         },
       },
       {
@@ -327,17 +440,19 @@ export default function MapPage() {
   const [selectedRegion, setSelectedRegion] = useState("indonesia");
   const [basemapMode, setBasemapMode] = useState("satellite");
   const [timeFilter, setTimeFilter] = useState("7d");
-  const [is3DPitch, setIs3DPitch] = useState(false);
+  const [sarPhase, setSarPhase] = useState(1);
+  const [isPlayingPhase, setIsPlayingPhase] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [sarBand, setSarBand] = useState("l-band");
   const [panelMinimized, setPanelMinimized] = useState(false);
-  const [analyticsMinimized, setAnalyticsMinimized] = useState(false);
-  const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("map");
+  const [notebookOpen, setNotebookOpen] = useState(false);
+  const [activeBookmark, setActiveBookmark] = useState("cover");
   const [selectedFeature, setSelectedFeature] = useState(null);
 
   const [layers, setLayers] = useState({
-    pins: true, // Ikon Pin Kebakaran NASA Worldview
-    thermal: true, // Pendaran Titik Panas MODIS/VIIRS
+    hotspots: true, // Pin Kebakaran + Pendaran Termal MODIS/VIIRS
     sar: true, // Jejak Radar SAR
-    protected: true, // Hutan Lindung
+    protected: true, // Hutan Lindung & Koridor Satwa
   });
 
   const [mapReady, setMapReady] = useState(false);
@@ -403,7 +518,7 @@ export default function MapPage() {
           setEonetWildfires(events);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     scrapeNasaSarSwaths()
       .then((liveSarFeatures) => {
@@ -419,13 +534,13 @@ export default function MapPage() {
         };
         setSarSwathsGeoJSON(mergedSar);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     fetchMeteomaticsSarWeather(-2.35, 113.42)
       .then((wx) => {
         if (mounted && wx) setMeteomaticsData(wx);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       mounted = false;
@@ -540,11 +655,33 @@ export default function MapPage() {
     };
   }, [fireEvents, eonetWildfires, timeFilter]);
 
+  const activePhaseConfig =
+    SAR_TIMELINE_PHASES[sarPhase] || SAR_TIMELINE_PHASES[1];
+
+  const phaseFireEvents = useMemo(() => {
+    if (activePhaseConfig.ratio <= 0) return [];
+    const count = Math.max(
+      1,
+      Math.round(filteredFireEvents.length * activePhaseConfig.ratio),
+    );
+    return filteredFireEvents.slice(0, count);
+  }, [filteredFireEvents, activePhaseConfig.ratio]);
+
+  // Auto-play 2 fase (Sebelum Kebakaran vs Sekarang Ketika Terbakar)
+  useEffect(() => {
+    if (!isPlayingPhase) return undefined;
+    const id = setInterval(() => {
+      setSarPhase((prev) => (prev + 1) % SAR_TIMELINE_PHASES.length);
+    }, 2800);
+    return () => clearInterval(id);
+  }, [isPlayingPhase]);
+
   const wildlifeHabitatsGeoJSON = useMemo(
     () => buildIndonesiaWildlifeHabitatsGeoJSON(),
     [],
   );
 
+  // Gunakan filteredFireEvents agar poligon zona lahan tetap tampil di kedua fase (hijau utuh -> luka bakar)
   const fullDistrictWatchlist = useMemo(
     () => buildKarhutlaDistrictWatchlist(filteredFireEvents),
     [filteredFireEvents],
@@ -558,7 +695,7 @@ export default function MapPage() {
   const fireGeoJSON = useMemo(() => {
     return {
       type: "FeatureCollection",
-      features: filteredFireEvents.map((f, idx) => {
+      features: phaseFireEvents.map((f, idx) => {
         const eonetId = f.eonet_id || `EONET_${26285 + (idx % 120)}`;
         return {
           type: "Feature",
@@ -580,20 +717,50 @@ export default function MapPage() {
             provinsi: f.provinsi || "Indonesia",
             land_type: f.land_type || "Tropical Forest & Peatland",
             alert_level: f.alert_level || "WILDFIRE ALERT",
-            google_maps_url:
-              f.google_maps_url ||
-              `https://www.google.com/maps?q=${f.latitude},${f.longitude}`,
-            worldview_url: buildNasaWorldviewUrl(
-              Number(f.longitude),
-              Number(f.latitude),
-              eonetId,
-              f.acq_date || "2024-09-18",
-            ),
           },
         };
       }),
     };
   }, [filteredFireEvents]);
+
+  const ecosystemSummary = useMemo(() => {
+    const total = phaseFireEvents.length;
+    let peatCount = 0;
+    let highIntensityCount = 0;
+    let wildlifeOverlapCount = 0;
+
+    phaseFireEvents.forEach((f) => {
+      if (/peat|gambut|swamp/i.test(f.land_type || "")) peatCount += 1;
+      if (Number(f.frp || 0) >= 35 || Number(f.brightness || 0) >= 355) {
+        highIntensityCount += 1;
+      }
+      const scope =
+        f.wildlife_scope ||
+        resolveIndonesiaWildlifeScope(Number(f.latitude), Number(f.longitude));
+      if (scope?.speciesList?.length) wildlifeOverlapCount += 1;
+    });
+
+    const corridorImpacts = INDONESIA_WILDLIFE_HABITATS.map((hab) => {
+      const nearby = phaseFireEvents.filter((f) => {
+        const dLon = Math.abs(Number(f.longitude) - hab.lon);
+        const dLat = Math.abs(Number(f.latitude) - hab.lat);
+        return Math.sqrt(dLon * dLon + dLat * dLat) <= 1.8;
+      });
+      return {
+        ...hab,
+        hotspotCount: nearby.length,
+        coords: [hab.lon, hab.lat],
+      };
+    }).sort((a, b) => b.hotspotCount - a.hotspotCount);
+
+    return {
+      total,
+      peatCount,
+      highIntensityCount,
+      wildlifeOverlapCount,
+      corridorImpacts,
+    };
+  }, [phaseFireEvents]);
 
   const latestFireGeoJSONRef = useRef(fireGeoJSON);
   latestFireGeoJSONRef.current = fireGeoJSON;
@@ -601,20 +768,11 @@ export default function MapPage() {
   const latestZonesGeoJSONRef = useRef(burningZonesGeoJSON);
   latestZonesGeoJSONRef.current = burningZonesGeoJSON;
 
-  // Fungsi ketika Ikon Pin Kebakaran di peta diklik -> langsung tampilkan Popup + Info Kebakaran
+  // Fungsi ketika Ikon Pin Kebakaran di peta diklik -> perbarui Impact Card + tampilkan Popup ringkas
   const handleSelectHotspotPin = (hotspot, idx = 0) => {
     const lon = Number(hotspot.longitude);
     const lat = Number(hotspot.latitude);
     const eonetId = hotspot.eonet_id || `EONET_${26285 + (idx % 120)}`;
-    const gmapsUrl =
-      hotspot.google_maps_url ||
-      `https://www.google.com/maps?q=${lat.toFixed(4)},${lon.toFixed(4)}`;
-    const wvUrl = buildNasaWorldviewUrl(
-      lon,
-      lat,
-      eonetId,
-      hotspot.acq_date || "2024-09-18",
-    );
 
     const tempK = Math.round(Number(hotspot.brightness || 358));
     const tempC = Math.round(tempK - 273.15);
@@ -628,7 +786,7 @@ export default function MapPage() {
     const sensorName =
       hotspot.sensor && hotspot.sensor.length > 8
         ? hotspot.sensor
-        : "Suomi-NPP VIIRS 375m + Sentinel-1 SAR";
+        : "VIIRS 375m + NISAR / Sentinel-1 SAR";
     const alertLabel = hotspot.alert_level || "ALERT 1 · CRITICAL PEAT FIRE";
     const rawTimeStr = String(hotspot.acq_time || "0530").padStart(4, "0");
     const formattedUtcTime = `${rawTimeStr.slice(0, 2)}:${rawTimeStr.slice(2, 4)} UTC`;
@@ -640,6 +798,26 @@ export default function MapPage() {
         : "";
     const wildlifeScope =
       hotspot.wildlife_scope || resolveIndonesiaWildlifeScope(lat, lon);
+    const smi =
+      meteomaticsData.soilMoistureIdx > 0
+        ? meteomaticsData.soilMoistureIdx
+        : 0.24;
+    const fwi =
+      meteomaticsData.fireRiskIdx > 0 ? meteomaticsData.fireRiskIdx : 0.82;
+
+    const impactChain = buildImpactTranslation({
+      tempK,
+      frpVal,
+      sarDb,
+      sarDrop,
+      landType: hotspot.land_type,
+      smi,
+      fwi,
+      windSpeedMs: meteomaticsData.windSpeedMs,
+      windCompass: meteomaticsData.windCompass,
+      wildlifeScope,
+    });
+
     const speciesBadgesHtml = (wildlifeScope?.speciesList || [])
       .map((sp) => {
         const isCr = sp.status === "CR";
@@ -650,123 +828,79 @@ export default function MapPage() {
       })
       .join("");
 
+    setActiveBookmark("cover");
+    setNotebookOpen(true);
+    setPlayerOpen(true);
+    setSarPhase(1);
+    setIsPlayingPhase(false);
     setSelectedFeature({
-      title: `🔥 ${hotspot.kabupaten || "Wildfire Hotspot"} (${eonetId})`,
-      subtitle: `${hotspot.provinsi || "Indonesia"} • ${hotspot.land_type || "Tropical Forest & Peatland"}`,
+      title: hotspot.kabupaten || "Wildfire Hotspot",
+      distanceTag: distKmText ? distKmText.replace(" • ", "") : "",
+      subtitle: `${hotspot.provinsi || "Indonesia"} · ${hotspot.land_type || "Tropical Forest & Peatland"}`,
       coordsText: `${lat.toFixed(4)}, ${lon.toFixed(4)}`,
       sensor: sensorName,
-      dateText: `${hotspot.acq_date || "LIVE"} ${formattedUtcTime} • ${alertLabel}`,
-      googleMapsUrl: gmapsUrl,
-      worldviewUrl: wvUrl,
+      dateText: `${hotspot.acq_date || "LIVE"} · ${formattedUtcTime}`,
+      alertLabel,
+      isLiveHotspot,
+      confLabel,
+      eonetId,
+      tempK,
+      tempC,
+      frpVal,
+      sarDb,
+      sarDrop,
+      smi,
+      fwi,
+      windSpeedMs: meteomaticsData.windSpeedMs,
+      windCompass: meteomaticsData.windCompass,
       wildlifeScope,
-      metrics: [
-        { label: "NASA Event", value: eonetId },
-        { label: "Thermal Temp", value: `${tempK} K (${tempC}°C)` },
-        { label: "Fire Energy (FRP)", value: `${frpVal} MW` },
-      ],
+      impactChain,
     });
 
     if (mapRef.current) {
       const popupContent = `
         <div style="font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
-          <!-- Top Accent Bar -->
           <div style="height: 4px; width: 100%; background: linear-gradient(90deg, #dc2626 0%, #f97316 55%, #059669 100%);"></div>
-
-          <!-- Bright Header Card (Warm Cream / Rose Tint) -->
-          <div style="padding: 12px 14px 10px 14px; background: linear-gradient(135deg, #fff5f5 0%, #fffbeb 100%); border-bottom: 1px solid #fee2e2;">
-            <!-- Top Badge Row (30px right padding so it never overlaps close X button) -->
-            <div style="display: flex; align-items: center; gap: 5px; padding-right: 30px; margin-bottom: 6px; flex-wrap: wrap;">
-              <span style="display: inline-flex; align-items: center; gap: 4px; background: #ffffff; color: #b91c1c; font-family: ui-monospace, monospace; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 999px; border: 1px solid #fca5a5; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-                <span style="width: 6px; height: 6px; border-radius: 999px; background: #dc2626; display: inline-block;"></span>
-                ${eonetId}
+          <div style="padding: 10px 12px 9px 12px; background: linear-gradient(135deg, #fff5f5 0%, #fffbeb 100%); border-bottom: 1px solid #fee2e2;">
+            <div style="display: flex; align-items: center; gap: 5px; padding-right: 28px; margin-bottom: 4px; flex-wrap: wrap;">
+              <span style="background: #ecfdf5; color: #047857; font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 800; padding: 2px 6px; border-radius: 999px; border: 1px solid #6ee7b7;">
+                ${isLiveHotspot ? "🟢 LIVE NRT" : "📦 SNAPSHOT"} • ${confLabel}
               </span>
-              <span style="background: #ecfdf5; color: #047857; font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; border: 1px solid #6ee7b7;">
-                ${isLiveHotspot ? "🟢 REAL-TIME NRT" : "📦 BASELINE"} • ${confLabel}
+              <span style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; color: #64748b;">
+                ${hotspot.acq_date || "LIVE"}
               </span>
             </div>
-
-            <!-- Regency Title & Ecosystem Location -->
-            <div style="font-size: 15.5px; font-weight: 800; color: #7f1d1d; letter-spacing: -0.01em; line-height: 1.25;">
+            <div style="font-size: 14.5px; font-weight: 800; color: #7f1d1d; line-height: 1.25;">
               🔥 ${hotspot.kabupaten || "Wildfire Hotspot"}${distKmText}
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 3px; line-height: 1.35;">
+            <div style="font-size: 10.5px; font-weight: 600; color: #475569; margin-top: 2px;">
               📍 ${hotspot.provinsi || "Indonesia"} • <span style="color: #1e293b; font-weight: 700;">${hotspot.land_type || "Peat Dome & Tropical Forest"}</span>
             </div>
           </div>
 
-          <!-- Clean White Card Body -->
-          <div style="padding: 11px 14px 13px 14px; background: #ffffff;">
-            <!-- Alert Status Banner -->
-            <div style="padding: 6px 10px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-              <span style="font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 800; color: #b91c1c; text-transform: uppercase;">
-                🚨 ${alertLabel}
-              </span>
-              <span style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 800; color: #9a3412; background: #ffedd5; padding: 1px 6px; border-radius: 4px; border: 1px solid #fed7aa;">
-                ${hotspot.acq_date || "LIVE"} • ${formattedUtcTime}
-              </span>
-            </div>
-
-            <!-- 3 High-Contrast Telemetry Metrics Grid -->
-            <div style="margin-top: 9px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
-              <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 9px; padding: 6px 6px; text-align: center;">
-                <div style="font-family: ui-monospace, monospace; font-size: 8px; font-weight: 700; color: #9a3412; text-transform: uppercase;">Thermal Temp</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 800; color: #c2410c; margin-top: 1px;">${tempK} K</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; color: #ea580c;">≈ ${tempC} °C</div>
+          <div style="padding: 10px 12px 11px 12px; background: #ffffff;">
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px;">
+              <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 5px; text-align: center;">
+                <div style="font-family: ui-monospace, monospace; font-size: 7.5px; font-weight: 700; color: #9a3412; text-transform: uppercase;">Suhu Api</div>
+                <div style="font-family: ui-monospace, monospace; font-size: 11px; font-weight: 800; color: #c2410c;">${tempC}°C</div>
               </div>
-              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 9px; padding: 6px 6px; text-align: center;">
-                <div style="font-family: ui-monospace, monospace; font-size: 8px; font-weight: 700; color: #991b1b; text-transform: uppercase;">FRP Energy</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 800; color: #dc2626; margin-top: 1px;">${frpVal} MW</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; color: #e11d48;">Radiative</div>
+              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 5px; text-align: center;">
+                <div style="font-family: ui-monospace, monospace; font-size: 7.5px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Energi FRP</div>
+                <div style="font-family: ui-monospace, monospace; font-size: 11px; font-weight: 800; color: #dc2626;">${frpVal} MW</div>
               </div>
-              <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 9px; padding: 6px 6px; text-align: center;">
-                <div style="font-family: ui-monospace, monospace; font-size: 8px; font-weight: 700; color: #075985; text-transform: uppercase;">SAR Radar</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 800; color: #0284c7; margin-top: 1px;">${sarDb} dB</div>
-                <div style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; color: #0369a1;">Δ ${sarDrop} dB</div>
+              <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 5px; text-align: center;">
+                <div style="font-family: ui-monospace, monospace; font-size: 7.5px; font-weight: 700; color: #075985; text-transform: uppercase;">SAR Radar</div>
+                <div style="font-family: ui-monospace, monospace; font-size: 11px; font-weight: 800; color: #0284c7;">${sarDb} dB</div>
               </div>
             </div>
 
-            <!-- Sensor, GPS Coordinates & Weather Table -->
-            <div style="margin-top: 9px; padding: 8px 10px; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 10.5px; line-height: 1.65; color: #334155;">
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
-                <span style="color: #64748b; font-weight: 600;">🛰️ NASA Sensor:</span>
-                <span style="font-weight: 800; color: #0f172a; text-align: right;">${sensorName}</span>
+            <div style="margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: #ecfdf5; border: 1px solid #a7f3d0;">
+              <div style="font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 800; color: #065f46; text-transform: uppercase; margin-bottom: 4px;">
+                ${wildlifeScope?.primaryIcon || "🦧"} Satwa Terdampak (Radius ${wildlifeScope?.radiusKm || 60} km)
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
-                <span style="color: #64748b; font-weight: 600;">🧭 GPS Coords:</span>
-                <code style="font-family: ui-monospace, monospace; font-weight: 800; color: #047857; background: #ecfdf5; padding: 1px 6px; border-radius: 4px; border: 1px solid #a7f3d0;">${lat.toFixed(4)}, ${lon.toFixed(4)}</code>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                <span style="color: #64748b; font-weight: 600;">🌦️ Meteomatics API:</span>
-                <span id="popup-meteo-line" style="font-weight: 800; color: #0369a1; text-align: right;">💨 ${meteomaticsData.windSpeedMs} m/s • SMI ${meteomaticsData.soilMoistureIdx > 0 ? meteomaticsData.soilMoistureIdx : 0.24} • FWI ${meteomaticsData.fireRiskIdx > 0 ? meteomaticsData.fireRiskIdx : 0.82}</span>
-              </div>
-            </div>
-
-            <!-- Endemic Wildlife Scope in This Area -->
-            <div style="margin-top: 9px; padding: 8px 10px; border-radius: 9px; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border: 1px solid #6ee7b7;">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 5px;">
-                <span style="font-family: ui-monospace, monospace; font-size: 9px; font-weight: 800; color: #065f46; text-transform: uppercase;">
-                  ${wildlifeScope?.primaryIcon || "🦧"} Endemic Wildlife Scope in This Area
-                </span>
-                <span style="background: #d1fae5; color: #047857; font-family: ui-monospace, monospace; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 4px;">
-                  Radius ${wildlifeScope?.radiusKm || 60} km
-                </span>
-              </div>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px;">
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                 ${speciesBadgesHtml}
               </div>
-              <div style="font-size: 9.5px; color: #064e3b; font-weight: 600; line-height: 1.35;">
-                ${wildlifeScope?.impactSummary || "Protected wildlife habitat corridor affected by toxic smoke & canopy loss."}
-              </div>
-            </div>
-
-            <!-- Navigation Buttons -->
-            <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; gap: 5px; background: linear-gradient(180deg, #059669 0%, #047857 100%); color: #ffffff; text-decoration: none; padding: 7.5px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);">
-                📍 Google Maps
-              </a>
-              <a href="${wvUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; gap: 5px; background: linear-gradient(180deg, #dc2626 0%, #983226 100%); color: #ffffff; text-decoration: none; padding: 7.5px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(185, 28, 28, 0.25);">
-                🛰️ NASA Worldview
-              </a>
             </div>
           </div>
         </div>
@@ -776,7 +910,7 @@ export default function MapPage() {
       const popupInstance = new maplibregl.Popup({
         offset: 38,
         anchor: "bottom",
-        maxWidth: "330px",
+        maxWidth: "300px",
         className: "nasa-fire-popup",
       })
         .setLngLat([lon, lat])
@@ -789,17 +923,49 @@ export default function MapPage() {
       }
       popupRef.current = popupInstance;
 
+      // Zoom mendekat ke lokasi titik api agar perubahan kondisi lahan historis vs sekarang terlihat jelas
+      const currentZoom = mapRef.current.getZoom();
+      mapRef.current.flyTo({
+        center: [lon, lat],
+        zoom: currentZoom < 10.2 ? 10.5 : currentZoom,
+        duration: 1100,
+        essential: true,
+      });
+
       // Sync live Meteomatics weather & soil moisture parameters for the clicked coordinate
       fetchMeteomaticsSarWeather(lat, lon)
         .then((wx) => {
           if (!wx) return;
           setMeteomaticsData(wx);
-          const el = popupEl?.querySelector("#popup-meteo-line");
-          if (el) {
-            el.textContent = `💨 ${wx.windSpeedMs} m/s • SMI ${wx.soilMoistureIdx} • FWI ${wx.fireRiskIdx}`;
-          }
+          const updatedSmi =
+            wx.soilMoistureIdx > 0 ? wx.soilMoistureIdx : smi;
+          const updatedFwi = wx.fireRiskIdx > 0 ? wx.fireRiskIdx : fwi;
+          const updatedChain = buildImpactTranslation({
+            tempK,
+            frpVal,
+            sarDb,
+            sarDrop,
+            landType: hotspot.land_type,
+            smi: updatedSmi,
+            fwi: updatedFwi,
+            windSpeedMs: wx.windSpeedMs,
+            windCompass: wx.windCompass,
+            wildlifeScope,
+          });
+          setSelectedFeature((prev) =>
+            prev && prev.coordsText === `${lat.toFixed(4)}, ${lon.toFixed(4)}`
+              ? {
+                ...prev,
+                smi: updatedSmi,
+                fwi: updatedFwi,
+                windSpeedMs: wx.windSpeedMs,
+                windCompass: wx.windCompass,
+                impactChain: updatedChain,
+              }
+              : prev,
+          );
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   };
 
@@ -947,8 +1113,19 @@ export default function MapPage() {
           type: "fill",
           source: "karhutla-zones",
           paint: {
-            "fill-color": "#dc2626",
-            "fill-opacity": 0.18,
+            "fill-color": "#7f1d1d",
+            "fill-opacity": 0.48,
+          },
+        });
+
+        map.addLayer({
+          id: "karhutla-zone-outline",
+          type: "line",
+          source: "karhutla-zones",
+          paint: {
+            "line-color": "#f97316",
+            "line-width": 1.6,
+            "line-opacity": 0.85,
           },
         });
 
@@ -1002,6 +1179,29 @@ export default function MapPage() {
           },
         });
 
+        // 5. Optical Smoke Haze Layer (terlihat di mode EO Optical, langsung tembus saat mode SAR Radar)
+        map.addLayer({
+          id: "optical-smoke-haze",
+          type: "circle",
+          source: "fire-points",
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              2,
+              14,
+              5,
+              30,
+              9,
+              58,
+            ],
+            "circle-color": "#cbd5e1",
+            "circle-opacity": 0.52,
+            "circle-blur": 0.95,
+          },
+        });
+
         setMapLoaded(true);
       };
 
@@ -1022,15 +1222,14 @@ export default function MapPage() {
   }, []);
 
   /**
-   * Render NASA Worldview Fire Pin Markers across all active Indonesia wildfire hotspots
+   * Render Fire Pin Markers across active Indonesia wildfire hotspots
    */
   useEffect(() => {
-    if (!mapRef.current || !mapReady || !layers.pins) return undefined;
+    if (!mapRef.current || !mapReady || !layers.hotspots) return undefined;
 
     const markers = [];
 
-    // Render all active Indonesia hotspots (up to 300 pins across Kalimantan, Sumatra, Java, Sulawesi, NTT, Maluku & Papua)
-    const hotspotsToPin = filteredFireEvents.slice(0, 300);
+    const hotspotsToPin = phaseFireEvents.slice(0, 300);
 
     hotspotsToPin.forEach((hotspot, idx) => {
       const lon = Number(hotspot.longitude);
@@ -1039,20 +1238,17 @@ export default function MapPage() {
 
       const isHigh =
         hotspot.confidence === "high" || Number(hotspot.brightness) >= 350;
-      const w = isHigh ? 34 : 29;
-      const h = isHigh ? 40 : 34;
-      const eonetId = hotspot.eonet_id || `EONET_${26285 + (idx % 120)}`;
+      const w = isHigh ? 32 : 27;
+      const h = isHigh ? 38 : 32;
 
-      // MapLibre Marker root element (keep z-index 1-2 so it never overlaps popup/sidebars)
       const wrapperEl = document.createElement("div");
       wrapperEl.style.cursor = "pointer";
       wrapperEl.style.userSelect = "none";
       wrapperEl.style.zIndex = isHigh ? "2" : "1";
-      wrapperEl.title = `🔥 ${hotspot.kabupaten || "Wildfire Hotspot"} (${hotspot.provinsi || "Indonesia"}) — ${eonetId} • Click to inspect wildfire & wildlife details`;
+      wrapperEl.title = `🔥 ${hotspot.kabupaten || "Wildfire Hotspot"} (${hotspot.provinsi || "Indonesia"}) — Klik untuk lihat dampak ekosistem`;
 
-      // Elemen anak di dalamnya untuk menampung SVG Pin Api NASA Worldview
       const innerEl = document.createElement("div");
-      innerEl.innerHTML = getNasaWorldviewPinSvg(w, h);
+      innerEl.innerHTML = getFirePinSvg(w, h);
       wrapperEl.appendChild(innerEl);
 
       wrapperEl.addEventListener("click", (ev) => {
@@ -1070,7 +1266,7 @@ export default function MapPage() {
       markers.push(marker);
     });
 
-    // Tampilkan Badge Lingkup Habitat Satwa Endemik Indonesia (Orangutan, Harimau, Gajah, Elang Jawa, Anoa, Cenderawasih)
+    // Badge Lingkup Habitat Satwa Endemik Indonesia
     if (layers.protected) {
       INDONESIA_WILDLIFE_HABITATS.forEach((hab) => {
         const habWrapper = document.createElement("div");
@@ -1108,27 +1304,81 @@ export default function MapPage() {
     return () => {
       markers.forEach((m) => m.remove());
     };
-  }, [filteredFireEvents, mapReady, layers.pins, layers.protected]);
+  }, [phaseFireEvents, mapReady, layers.hotspots, layers.protected]);
 
-  // Ganti mode basemap
+  // Ganti mode basemap (EO Optical vs SAR Radar) & Swap Citra Satelit Historis (2014) vs Sekarang (Terbakar)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
-    const modes = {
-      satellite: "raster-satellite",
-      "sar-dark": "raster-dark-radar",
-      topo: "raster-topo",
-    };
-    Object.entries(modes).forEach(([key, layerId]) => {
-      if (map.getLayer(layerId)) {
-        map.setLayoutProperty(
-          layerId,
-          "visibility",
-          basemapMode === key ? "visible" : "none",
-        );
-      }
-    });
-  }, [basemapMode, mapLoaded]);
+
+    const showHistorical = basemapMode === "satellite" && sarPhase === 0;
+    const showCurrentSat = basemapMode === "satellite" && sarPhase !== 0;
+    const showDarkRadar = basemapMode === "sar-dark";
+
+    if (map.getLayer("raster-satellite-historical")) {
+      map.setLayoutProperty(
+        "raster-satellite-historical",
+        "visibility",
+        showHistorical ? "visible" : "none",
+      );
+    }
+    if (map.getLayer("raster-satellite")) {
+      map.setLayoutProperty(
+        "raster-satellite",
+        "visibility",
+        showCurrentSat ? "visible" : "none",
+      );
+    }
+    if (map.getLayer("raster-dark-radar")) {
+      map.setLayoutProperty(
+        "raster-dark-radar",
+        "visibility",
+        showDarkRadar ? "visible" : "none",
+      );
+    }
+
+    // Di mode EO Optical, kabut asap terlihat saat kebakaran terjadi; di mode SAR, asap ditembus total (opacity 0)
+    if (map.getLayer("optical-smoke-haze")) {
+      const smokeOpacity =
+        basemapMode === "sar-dark" ? 0 : activePhaseConfig.smokeOpacity;
+      map.setPaintProperty("optical-smoke-haze", "circle-opacity", smokeOpacity);
+    }
+
+    // Warna, garis batas & opasitas zona perubahan lahan (kanopi hijau utuh -> luka bakar merah gelap)
+    if (map.getLayer("karhutla-zone-fill")) {
+      map.setPaintProperty(
+        "karhutla-zone-fill",
+        "fill-color",
+        activePhaseConfig.zoneColor,
+      );
+      map.setPaintProperty(
+        "karhutla-zone-fill",
+        "fill-opacity",
+        basemapMode === "sar-dark"
+          ? Math.min(0.62, activePhaseConfig.zoneOpacity + 0.12)
+          : activePhaseConfig.zoneOpacity,
+      );
+    }
+    if (map.getLayer("karhutla-zone-outline")) {
+      map.setPaintProperty(
+        "karhutla-zone-outline",
+        "line-color",
+        activePhaseConfig.zoneBorder || activePhaseConfig.zoneColor,
+      );
+    }
+
+    // Warna sapuan radar SAR membedakan NISAR L-Band (24cm, cyan/sky) vs Sentinel-1 C-Band (5.6cm, indigo/violet)
+    if (map.getLayer("sar-outline") && map.getLayer("sar-fill")) {
+      const bandColor = sarBand === "l-band" ? "#38bdf8" : "#a78bfa";
+      map.setPaintProperty("sar-outline", "line-color", bandColor);
+      map.setPaintProperty("sar-fill", "fill-color", bandColor);
+      map.setPaintProperty(
+        "sar-fill",
+        "fill-opacity",
+        basemapMode === "sar-dark" ? 0.16 : 0.08,
+      );
+    }
+  }, [basemapMode, sarPhase, sarBand, activePhaseConfig, mapLoaded]);
 
   // Update sumber data titik api & poligon zona berapi
   useEffect(() => {
@@ -1158,22 +1408,10 @@ export default function MapPage() {
       mapRef.current.flyTo({
         center: REGION_COORDINATES[reg].center,
         zoom: REGION_COORDINATES[reg].zoom,
-        pitch: is3DPitch ? 40 : 0,
+        pitch: 0,
         bearing: 0,
-        duration: 1300,
+        duration: 1200,
         essential: true,
-      });
-    }
-  };
-
-  const handleToggle3DPitch = () => {
-    const next3D = !is3DPitch;
-    setIs3DPitch(next3D);
-    if (mapRef.current) {
-      mapRef.current.easeTo({
-        pitch: next3D ? 42 : 0,
-        bearing: 0,
-        duration: 800,
       });
     }
   };
@@ -1185,11 +1423,13 @@ export default function MapPage() {
     if (!mapRef.current || !mapLoaded) return;
     const visibility = nextVal ? "visible" : "none";
 
-    if (layerKey === "thermal") {
+    if (layerKey === "hotspots") {
       [
         "karhutla-zone-fill",
+        "karhutla-zone-outline",
         "modis-thermal-anomalies-glow",
         "modis-thermal-anomalies-core",
+        "optical-smoke-haze",
       ].forEach((id) => {
         if (mapRef.current.getLayer(id)) {
           mapRef.current.setLayoutProperty(id, "visibility", visibility);
@@ -1215,68 +1455,33 @@ export default function MapPage() {
     }
   };
 
-  // Selected Wildfire Info (defaults to the primary Central Kalimantan peat dome hotspot and updates when any pin is clicked)
-  const defaultHotspot =
-    filteredFireEvents.find((f) => f.region_code === "central") ||
-    filteredFireEvents[0];
-
-  const activeFireInfo =
-    selectedFeature ||
-    (defaultHotspot && {
-      title: `🔥 ${defaultHotspot.kabupaten || "Pulang Pisau Regency"} (${defaultHotspot.eonet_id || "EONET_26285"})`,
-      subtitle: `${defaultHotspot.provinsi || "Central Kalimantan"} • ${defaultHotspot.land_type || "Deep Peat Dome & Sebangau Corridor"}`,
-      coordsText: `${Number(defaultHotspot.latitude).toFixed(4)}, ${Number(defaultHotspot.longitude).toFixed(4)}`,
-      sensor: defaultHotspot.sensor || "MODIS / VIIRS Thermal Anomalies",
-      dateText: `${defaultHotspot.acq_date || "2024-09-18"} • ${defaultHotspot.alert_level || "ALERT 1 · CRITICAL PEAT FIRE"}`,
-      googleMapsUrl: `https://www.google.com/maps?q=${Number(defaultHotspot.latitude).toFixed(4)},${Number(defaultHotspot.longitude).toFixed(4)}`,
-      worldviewUrl: buildNasaWorldviewUrl(
-        Number(defaultHotspot.longitude),
-        Number(defaultHotspot.latitude),
-        defaultHotspot.eonet_id || "EONET_26285",
-        defaultHotspot.acq_date || "2024-09-18",
-      ),
-      metrics: [
-        {
-          label: "NASA Event",
-          value: defaultHotspot.eonet_id || "EONET_26285",
-        },
-        {
-          label: "Thermal Temp",
-          value: `${Math.round(Number(defaultHotspot.brightness || 368))} K`,
-        },
-        {
-          label: "Fire Energy (FRP)",
-          value: `${defaultHotspot.frp || 48.5} MW`,
-        },
-      ],
-    });
-
-  // Fly directly to the selected wildlife habitat corridor when clicked in the "🦧 Wildlife Impact" tab
+  // Fly directly to the selected wildlife habitat corridor and select its nearest hotspot
   const handleFocusWildlifeCorridor = (speciesItem) => {
     if (!mapRef.current) return;
     mapRef.current.flyTo({
       center: speciesItem.coords,
       zoom: 7.4,
-      pitch: is3DPitch ? 42 : 25,
+      pitch: 0,
       bearing: 0,
-      duration: 1300,
+      duration: 1200,
       essential: true,
     });
     const nearbyHotspot = filteredFireEvents.find(
       (f) =>
-        Math.abs(Number(f.longitude) - speciesItem.coords[0]) < 1.2 &&
-        Math.abs(Number(f.latitude) - speciesItem.coords[1]) < 1.2,
+        Math.abs(Number(f.longitude) - speciesItem.coords[0]) < 1.5 &&
+        Math.abs(Number(f.latitude) - speciesItem.coords[1]) < 1.5,
     );
     if (nearbyHotspot) {
       handleSelectHotspotPin(nearbyHotspot, 0);
+    } else {
+      setNotebookOpen(true);
     }
   };
 
   return (
     <div
-      className={`relative w-full ${
-        isEmbed ? "h-screen" : "h-[calc(100vh-64px)] min-h-[680px]"
-      } overflow-hidden flex flex-col bg-[#030b14]`}
+      className={`relative w-full ${isEmbed ? "h-screen" : "h-[calc(100vh-64px)] min-h-[680px]"
+        } overflow-hidden flex flex-col bg-[#030b14]`}
     >
       {webGLError && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#030b14] p-6 text-cream-100">
@@ -1357,706 +1562,959 @@ export default function MapPage() {
           aria-label="Interactive Indonesia wildfire and wildlife habitat map powered by NASA Worldview EONET, MODIS/VIIRS & NISAR SAR"
         />
 
-        {/* ==================== COMPACT LEFT CONTROL PANEL (Z-30) ==================== */}
+        {/* ==================== CARTOGRAPHER FIELD BOARD (Z-30) ==================== */}
         {!isEmbed && (
-          <div className="pointer-events-none absolute top-2.5 left-2.5 z-30 flex w-[calc(100%-1.25rem)] max-w-[265px] flex-col gap-2">
-            {/* MAIN CONTROL CARD */}
-            <div className="pointer-events-auto rounded-xl border border-white/15 bg-[#0b1320]/90 p-2.5 text-cream-50 shadow-xl backdrop-blur-md">
-              <div className="flex items-center justify-between gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/80 bg-[#983226] text-[10px]">
-                    🔥
-                  </span>
+          <div className="pointer-events-none absolute top-3 left-3 z-30 flex w-[calc(100%-1.5rem)] max-w-[272px] flex-col">
+            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_20px_48px_rgba(0,0,0,0.48),3px_3px_0_#ded4be]">
+              {/* Forest Green & Brass Expedition Header */}
+              <div className="relative border-b-2 border-[#c89d54]/70 bg-gradient-to-br from-[#163a28] via-[#1c4732] to-[#112d1f] px-3.5 py-2.5 text-[#faf6ee]">
+                <span className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
+                <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
+
+                <div className="flex items-center justify-between gap-2 pl-2">
                   <div>
-                    <h1 className="font-display text-xs font-bold text-cream-50 leading-tight">
-                      NASA Worldview SAR
+                    <div className="font-mono text-[8px] font-bold tracking-[0.22em] text-[#e5c787] uppercase">
+                      Pos Pantau · Kartografi
+                    </div>
+                    <h1 className="font-display text-[15px] font-extrabold tracking-tight text-white">
+                      H.O.M.E. Field Board
                     </h1>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-1">
-                  <span className="rounded-full bg-[#983226] px-2 py-0.5 font-mono text-[9px] font-bold text-white border border-white/25">
-                    {filteredFireEvents.length} Hotspots
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPanelMinimized((v) => !v)}
-                    title={
-                      panelMinimized ? "Expand Map Controls" : "Minimize Panel"
-                    }
-                    className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md border border-white/15 bg-white/5 text-[11px] font-bold text-cream-200 hover:bg-white/15"
-                  >
-                    {panelMinimized ? "+" : "−"}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded-md border border-[#f5d0c5]/30 bg-[#983226] px-2 py-0.5 font-mono text-[9.5px] font-bold text-white shadow-xs">
+                      {phaseFireEvents.length} titik
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPanelMinimized((v) => !v)}
+                      title={
+                        panelMinimized ? "Buka Papan Kontrol" : "Perkecil Papan"
+                      }
+                      className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-[#faf6ee] transition-colors hover:bg-white/20"
+                    >
+                      {panelMinimized ? "+" : "−"}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {!panelMinimized && (
-                <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
-                  {/* 1. Region Scope (Compact 2x2 Grid) */}
-                  <div className="grid grid-cols-2 gap-1">
-                    {Object.entries(REGION_COORDINATES).map(([key, cfg]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => handleRegionChange(key)}
-                        className={`cursor-pointer rounded-md border px-2 py-1 text-left text-[11px] font-semibold transition-all ${
-                          selectedRegion === key
-                            ? "border-amber-400 bg-amber-500/20 text-amber-200"
-                            : "border-white/10 bg-white/[0.04] text-cream-300 hover:bg-white/10"
+                <div
+                  className="divide-y divide-[#dfd4be] px-3.5 py-1"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(rgba(140, 125, 98, 0.12) 1px, transparent 1px)",
+                    backgroundSize: "14px 14px",
+                  }}
+                >
+                  {/* 1. Wilayah Fokus */}
+                  <div className="py-2.5">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
+                        Wilayah Pantau
+                      </span>
+                      <span className="font-mono text-[8.5px] font-semibold text-[#1b5e3a]">
+                        Nusantara
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {Object.entries(REGION_COORDINATES).map(([key, cfg]) => {
+                        const active = selectedRegion === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleRegionChange(key)}
+                            className={`cursor-pointer flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-all ${
+                              active
+                                ? "border-[#1b5e3a] bg-[#18442e] font-bold text-[#faf6ee] shadow-sm"
+                                : "border-[#dcd0b8] bg-white/75 font-semibold text-[#333d37] hover:border-[#b7a78a] hover:bg-white"
+                            }`}
+                          >
+                            <span className="truncate">{cfg.label}</span>
+                            <span
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                active ? "bg-[#e5c787]" : "bg-[#c7bba2]"
+                              }`}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 2. Sensor Visual & Rentang Waktu */}
+                  <div className="space-y-2 py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
+                        Mode Mata
+                      </span>
+                      <div className="inline-flex rounded-lg border border-[#d6cbb5] bg-[#efe7d6] p-0.5">
+                        {[
+                          { id: "satellite", label: "Optik EO" },
+                          { id: "sar-dark", label: "Radar SAR" },
+                        ].map((bm) => (
+                          <button
+                            key={bm.id}
+                            type="button"
+                            onClick={() => setBasemapMode(bm.id)}
+                            className={`cursor-pointer rounded-md px-2.5 py-1 font-mono text-[9.5px] font-bold transition-all ${
+                              basemapMode === bm.id
+                                ? "bg-[#18442e] text-[#faf6ee] shadow-xs"
+                                : "text-[#58625b] hover:text-[#1d2621]"
+                            }`}
+                          >
+                            {bm.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
+                        Rentang
+                      </span>
+                      <div className="inline-flex rounded-lg border border-[#d6cbb5] bg-[#efe7d6] p-0.5">
+                        {[
+                          { id: "24h", label: "24 Jam" },
+                          { id: "3d", label: "3 Hari" },
+                          { id: "7d", label: "7 Hari" },
+                        ].map((time) => (
+                          <button
+                            key={time.id}
+                            type="button"
+                            onClick={() => setTimeFilter(time.id)}
+                            className={`cursor-pointer rounded-md px-2 py-0.5 font-mono text-[9.5px] font-bold transition-all ${
+                              timeFilter === time.id
+                                ? "bg-[#983226] text-white shadow-xs"
+                                : "text-[#58625b] hover:text-[#1d2621]"
+                            }`}
+                          >
+                            {time.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Frekuensi Gelombang Radar */}
+                  <div className="py-2.5">
+                    <div className="mb-1.5 font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
+                      Frekuensi Gelombang SAR
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        {
+                          id: "l-band",
+                          title: "L-Band",
+                          wave: "λ 24 cm",
+                          bar: "w-full",
+                        },
+                        {
+                          id: "c-band",
+                          title: "C-Band",
+                          wave: "λ 5.6 cm",
+                          bar: "w-1/2",
+                        },
+                      ].map((band) => {
+                        const active = sarBand === band.id;
+                        return (
+                          <button
+                            key={band.id}
+                            type="button"
+                            onClick={() => setSarBand(band.id)}
+                            className={`cursor-pointer rounded-lg border p-2 text-left transition-all ${
+                              active
+                                ? "border-[#0369a1] bg-[#e6f3fa] shadow-xs"
+                                : "border-[#dcd0b8] bg-white/70 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-baseline justify-between">
+                              <span
+                                className={`font-mono text-[10.5px] font-extrabold ${
+                                  active ? "text-[#075985]" : "text-[#333d37]"
+                                }`}
+                              >
+                                {band.title}
+                              </span>
+                              <span className="font-mono text-[8.5px] font-semibold text-[#5c665f]">
+                                {band.wave}
+                              </span>
+                            </div>
+                            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[#dfd4be]">
+                              <div
+                                className={`h-full rounded-full ${band.bar} ${
+                                  active ? "bg-[#0284c7]" : "bg-[#9eb0a5]"
+                                }`}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1.5 text-[10px] leading-snug text-[#46514a]">
+                      {SAR_BAND_MODES[sarBand].detail}
+                    </p>
+                  </div>
+
+                  {/* 4. Lapisan Kartografi (Tactile Switches) */}
+                  <div className="space-y-1 py-2.5">
+                    <div className="mb-1 font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
+                      Lapisan Peta
+                    </div>
+                    {[
+                      {
+                        key: "hotspots",
+                        label: "Titik Panas & Zona Api",
+                        dot: "bg-[#983226]",
+                      },
+                      {
+                        key: "sar",
+                        label: "Sapuan Radar SAR",
+                        dot: "bg-[#0284c7]",
+                      },
+                      {
+                        key: "protected",
+                        label: "Koridor Habitat Satwa",
+                        dot: "bg-[#15803d]",
+                      },
+                    ].map((item) => {
+                      const on = layers[item.key];
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => toggleLayer(item.key)}
+                          className="cursor-pointer flex w-full items-center justify-between rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-white/70"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full ${
+                                on ? item.dot : "bg-[#c7bba2]"
+                              }`}
+                            />
+                            <span
+                              className={`text-[11px] font-semibold ${
+                                on ? "text-[#1d2621]" : "text-[#7a847d]"
+                              }`}
+                            >
+                              {item.label}
+                            </span>
+                          </span>
+                          <span
+                            className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border transition-colors ${
+                              on
+                                ? "border-[#18442e] bg-[#1b5e3a]"
+                                : "border-[#cbbda3] bg-[#e5dcc8]"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-2.5 w-2.5 rounded-full bg-[#faf6ee] shadow-xs transition-transform ${
+                                on ? "translate-x-3.5" : "translate-x-0.5"
+                              }`}
+                            />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 5. Status & Sinkronisasi */}
+                  <div className="flex items-center justify-between gap-2 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          fireStatus === "ERROR"
+                            ? "bg-amber-500"
+                            : "bg-[#15803d]"
                         }`}
-                      >
-                        {cfg.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* 2. Time Window & Basemap Mode */}
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div className="grid grid-cols-3 gap-0.5 rounded-md bg-white/5 p-0.5">
-                      {[
-                        { id: "24h", label: "24H" },
-                        { id: "3d", label: "3D" },
-                        { id: "7d", label: "7D" },
-                      ].map((time) => (
-                        <button
-                          key={time.id}
-                          type="button"
-                          onClick={() => setTimeFilter(time.id)}
-                          className={`cursor-pointer rounded py-0.5 text-[10px] font-bold transition-colors ${
-                            timeFilter === time.id
-                              ? "bg-amber-500 text-charcoal-950"
-                              : "text-cream-300 hover:bg-white/10"
-                          }`}
-                        >
-                          {time.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-0.5 rounded-md bg-white/5 p-0.5">
-                      {[
-                        { id: "satellite", label: "EO" },
-                        { id: "sar-dark", label: "SAR" },
-                        { id: "topo", label: "Topo" },
-                      ].map((bm) => (
-                        <button
-                          key={bm.id}
-                          type="button"
-                          onClick={() => setBasemapMode(bm.id)}
-                          className={`cursor-pointer rounded py-0.5 text-[10px] font-bold transition-colors ${
-                            basemapMode === bm.id
-                              ? "bg-emerald-600 text-white"
-                              : "text-cream-300 hover:bg-white/10"
-                          }`}
-                        >
-                          {bm.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. NASA Satellite Layers (2x2 Grid) */}
-                  <div className="grid grid-cols-2 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => toggleLayer("pins")}
-                      className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10.5px] transition-colors ${
-                        layers.pins
-                          ? "border-red-400/70 bg-[#983226]/50 font-semibold text-red-100"
-                          : "border-white/10 bg-white/[0.03] text-cream-400"
-                      }`}
-                    >
-                      <span>🔥</span>
-                      <span>Fire Pins</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleLayer("thermal")}
-                      className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10.5px] transition-colors ${
-                        layers.thermal
-                          ? "border-orange-400/70 bg-orange-500/20 font-semibold text-orange-200"
-                          : "border-white/10 bg-white/[0.03] text-cream-400"
-                      }`}
-                    >
-                      <span>🌡️</span>
-                      <span>MODIS/VIIRS</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleLayer("sar")}
-                      className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10.5px] transition-colors ${
-                        layers.sar
-                          ? "border-sky-400/70 bg-sky-500/20 font-semibold text-sky-200"
-                          : "border-white/10 bg-white/[0.03] text-cream-400"
-                      }`}
-                    >
-                      <span>🛰️</span>
-                      <span>SAR Swaths</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleLayer("protected")}
-                      className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10.5px] transition-colors ${
-                        layers.protected
-                          ? "border-emerald-400/70 bg-emerald-500/20 font-semibold text-emerald-200"
-                          : "border-white/10 bg-white/[0.03] text-cream-400"
-                      }`}
-                    >
-                      <span>🌳</span>
-                      <span>Habitats</span>
-                    </button>
-                  </div>
-
-                  {/* 4. Quick Action Bar */}
-                  <div className="flex items-center justify-between gap-1.5 border-t border-white/10 pt-1.5">
-                    <div className="flex items-center gap-1">
-                      <StatusBadge
-                        status={fireStatus || "OK"}
-                        label={isRealtimeFireMode ? "LIVE NRT" : "SNAPSHOT"}
                       />
-                      <button
-                        type="button"
-                        onClick={handleToggle3DPitch}
-                        className={`cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold ${
-                          is3DPitch
-                            ? "border-sky-400 bg-sky-500/20 text-sky-300"
-                            : "border-white/15 bg-white/5 text-cream-300"
-                        }`}
-                      >
-                        {is3DPitch ? "3D" : "2D"}
-                      </button>
+                      <span className="font-mono text-[9.5px] font-bold text-[#333d37]">
+                        {isRealtimeFireMode ? "Live NRT" : "Snapshot"}
+                      </span>
                     </div>
-
                     <button
                       type="button"
                       onClick={handleScrapeLiveNasa}
                       disabled={scrapingNasa || fireLoading}
-                      className="cursor-pointer rounded-md border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5 font-mono text-[9.5px] font-bold text-emerald-200 transition-all hover:bg-emerald-500/30 disabled:opacity-50"
+                      className="cursor-pointer whitespace-nowrap rounded-lg border border-[#c89d54] bg-[#efe5cf] px-2.5 py-1 font-mono text-[9.5px] font-bold text-[#3d2e14] shadow-2xs transition-colors hover:bg-[#e5d6b6] disabled:opacity-50"
                     >
-                      {scrapingNasa ? "🛰️ Sync..." : "🔄 Sync NASA"}
+                      {scrapingNasa ? "Menyinkronkan..." : "Sinkronkan Data"}
                     </button>
                   </div>
-
-                  {/* 5. Selected Hotspot Compact Summary (2-Line) */}
-                  {activeFireInfo && (
-                    <div className="rounded-lg border border-red-400/30 bg-red-950/25 p-2">
-                      <div className="truncate font-display text-[11px] font-bold text-cream-50">
-                        {activeFireInfo.title}
-                      </div>
-                      <div className="mt-0.5 flex items-center justify-between font-mono text-[9.5px] text-amber-200">
-                        <span>
-                          {activeFireInfo.metrics?.[1]?.value || "358 K"}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          FRP {activeFireInfo.metrics?.[2]?.value || "27.8 MW"}
-                        </span>
-                        <span>•</span>
-                        <span className="text-sky-300">
-                          FWI{" "}
-                          {meteomaticsData.fireRiskIdx > 0
-                            ? meteomaticsData.fireRiskIdx
-                            : 0.82}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ==================== COMPACT RIGHT PANEL (Z-30): H.O.M.E. SATELLITE ANALYTICS ==================== */}
-        {!isEmbed && (
-          <div className="pointer-events-none absolute top-2.5 right-2.5 z-30 flex w-[calc(100%-1.25rem)] max-w-[320px] flex-col">
-            <div className="pointer-events-auto max-h-[calc(100vh-145px)] overflow-y-auto rounded-xl border border-emerald-400/25 bg-[#04100d]/92 p-3 text-cream-50 shadow-xl backdrop-blur-md">
-              {/* Compact Header */}
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="font-mono text-[9px] font-bold tracking-wider text-[#00ff96] uppercase">
-                    💻 SATELLITE ANALYTICS
+        {/* ==================== FIELD NOTEBOOK SPIRAL & BOOKMARKS (Z-30) ==================== */}
+        {!isEmbed && !notebookOpen && (
+          <button
+            type="button"
+            onClick={() => setNotebookOpen(true)}
+            title="Buka Buku Catatan Lapangan"
+            className="cursor-pointer group absolute top-3 right-3 z-30 flex items-center gap-2.5 rounded-xl border border-[#d6cbb5] bg-[#faf6ee]/95 px-3 py-2 text-left text-[#1e2621] shadow-[0_12px_30px_rgba(0,0,0,0.45),3px_3px_0_#e5dcc8] backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-[#faf6ee]"
+          >
+            {/* Mini Spiral Icon */}
+            <span className="relative flex h-8 w-7 shrink-0 items-center justify-center rounded-r-md rounded-l-xs border border-[#cbbda3] bg-[#f1eadc] shadow-xs">
+              <span className="absolute -left-1 top-1.5 h-1 w-2 rounded-full bg-slate-500" />
+              <span className="absolute -left-1 top-3.5 h-1 w-2 rounded-full bg-slate-500" />
+              <span className="absolute -left-1 top-5.5 h-1 w-2 rounded-full bg-slate-500" />
+              <span className="text-sm">📖</span>
+            </span>
+            <div className="pr-1">
+              <div className="font-mono text-[8.5px] font-bold tracking-[0.15em] text-[#1b5e3a] uppercase">
+                {selectedFeature ? "Field Dossier" : "Field Notes"}
+              </div>
+              <div className="text-xs font-extrabold text-[#1a221d] group-hover:text-[#983226]">
+                {selectedFeature ? selectedFeature.title : "Buka Catatan"}
+              </div>
+            </div>
+          </button>
+        )}
+
+        {!isEmbed && notebookOpen && (
+          <div className="pointer-events-none absolute top-3 right-3 z-30 flex items-start">
+            {/* Main Spiral Notebook Body */}
+            <div className="pointer-events-auto relative flex w-[calc(100vw-4.5rem)] max-w-[312px] rounded-l-lg rounded-r-2xl border border-[#d6cbb5] bg-[#faf6ee] text-[#1e2621] shadow-[0_20px_50px_rgba(0,0,0,0.55),4px_4px_0_#e5dcc8,8px_8px_0_rgba(20,28,24,0.35)]">
+              {/* Spiral Wire Binding Spine (Left Edge) */}
+              <div
+                aria-hidden="true"
+                className="flex w-6 shrink-0 flex-col items-center justify-evenly rounded-l-lg border-r border-[#dfd5c0] bg-[#f1eadc] py-3"
+              >
+                {Array.from({ length: 10 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="relative flex w-full items-center justify-center"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full border border-[#bcae94] bg-[#2a332e] shadow-inner" />
+                    <span className="absolute -left-2 h-1.5 w-4.5 rounded-full bg-gradient-to-b from-slate-200 via-slate-400 to-slate-600 shadow-xs" />
                   </div>
-                  <h2 className="font-display text-xs font-extrabold text-white">
-                    Dancing with the SARs · NISAR
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAnalyticsMinimized((v) => !v)}
-                  title={
-                    analyticsMinimized
-                      ? "Expand Analytics Panel"
-                      : "Minimize Analytics Panel"
-                  }
-                  className="cursor-pointer flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-[11px] font-bold text-cream-200 hover:bg-white/15"
-                >
-                  {analyticsMinimized ? "+" : "−"}
-                </button>
+                ))}
               </div>
 
-              {!analyticsMinimized && (
-                <div className="mt-2 space-y-2 border-t border-emerald-400/15 pt-2">
-                  {/* 4 Module Feature Tabs (2x2 Compact Pills) */}
-                  <div className="grid grid-cols-2 gap-1">
-                    {[
-                      { id: "map", label: "🗺️ SAR & Weather" },
-                      { id: "sar", label: "📡 SAR Analysis" },
-                      { id: "ndvi", label: "🌱 Recovery ML" },
-                      { id: "wildlife", label: "🦧 Wildlife Impact" },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setActiveAnalyticsTab(tab.id)}
-                        className={`cursor-pointer rounded-lg px-2 py-1 font-mono text-[10px] font-bold transition-all ${
-                          activeAnalyticsTab === tab.id
-                            ? "bg-[#00c864] text-[#03120b] shadow-xs"
-                            : "border border-white/10 bg-white/[0.04] text-cream-200 hover:bg-white/10"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+              {/* Ruled Notebook Page Content */}
+              <div
+                className="max-h-[calc(100vh-155px)] min-w-0 flex-1 overflow-y-auto p-3.5"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(to bottom, transparent, transparent 23px, rgba(163, 149, 124, 0.16) 24px)",
+                }}
+              >
+                {/* Notebook Header */}
+                <div className="flex items-start justify-between gap-2 border-b-2 border-[#983226]/25 pb-2">
+                  <div className="min-w-0">
+                    <div className="font-mono text-[8.5px] font-bold tracking-[0.18em] text-[#1b5e3a] uppercase">
+                      {selectedFeature
+                        ? "Field Dossier · SAR"
+                        : "Field Notes · Nusantara"}
+                    </div>
+                    <h2 className="mt-0.5 truncate font-display text-[15px] font-extrabold tracking-tight text-[#1a221d]">
+                      {selectedFeature
+                        ? selectedFeature.title
+                        : "Catatan Ekosistem"}
+                    </h2>
+                    <p className="truncate text-[10.5px] font-medium text-[#5c665f]">
+                      {selectedFeature
+                        ? selectedFeature.subtitle
+                        : "Pilih titik api atau buka bookmark"}
+                    </p>
                   </div>
 
-                  {/* ==================== TAB 1: 🗺️ SAR & METEOMATICS WEATHER ==================== */}
-                  {activeAnalyticsTab === "map" && (
-                    <div className="space-y-2">
-                      {/* 4 Core NASA + Meteomatics Fusion Metrics */}
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2">
-                          <div className="font-mono text-[8.5px] text-cream-400 uppercase">
-                            VIIRS Hotspots
-                          </div>
-                          <div className="mt-0.5 font-mono text-xs font-extrabold text-amber-300">
-                            🔥 {filteredFireEvents.length} Active
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2">
-                          <div className="font-mono text-[8.5px] text-cream-400 uppercase">
-                            Fire Risk (FWI)
-                          </div>
-                          <div className="mt-0.5 font-mono text-xs font-extrabold text-red-400">
-                            ⚠️{" "}
-                            {meteomaticsData.fireRiskIdx > 0
-                              ? meteomaticsData.fireRiskIdx
-                              : 0.82}{" "}
-                            / 1.00
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2">
-                          <div className="font-mono text-[8.5px] text-cream-400 uppercase">
-                            Peat Moisture
-                          </div>
-                          <div className="mt-0.5 font-mono text-xs font-extrabold text-sky-300">
-                            💧 SMI{" "}
-                            {meteomaticsData.soilMoistureIdx > 0
-                              ? meteomaticsData.soilMoistureIdx
-                              : 0.24}
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2">
-                          <div className="font-mono text-[8.5px] text-cream-400 uppercase">
-                            10m Wind (Meteomatics)
-                          </div>
-                          <div className="mt-0.5 font-mono text-xs font-extrabold text-emerald-300">
-                            💨 {meteomaticsData.windSpeedMs} m/s
-                          </div>
-                        </div>
-                      </div>
+                  <button
+                    type="button"
+                    onClick={() => setNotebookOpen(false)}
+                    title="Tutup Buku Catatan"
+                    className="cursor-pointer flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#cfc3aa] bg-[#f2ebdc] text-xs font-bold text-[#3d4741] transition-colors hover:bg-[#e7decb]"
+                  >
+                    ×
+                  </button>
+                </div>
 
-                      {/* Compact Telemetry Stream */}
-                      <div className="rounded-lg border border-white/10 bg-[#020806] p-2 font-mono text-[9.5px] leading-snug">
-                        <div className="text-[#00ff96]">
-                          &gt; SAR: Sentinel-1 C-Band + NISAR L-Band (VV/VH)
-                        </div>
-                        <div className="text-sky-300">
-                          &gt; METEOMATICS: {meteomaticsData.tempC}°C • RH{" "}
-                          {meteomaticsData.humidityPct}% •{" "}
-                          {meteomaticsData.windCompass}
-                        </div>
-                        <div className="truncate text-amber-300">
-                          &gt; TARGET:{" "}
-                          {activeFireInfo?.subtitle || "Kalimantan Peat Dome"}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
+                <div className="mt-2.5">
+                  {selectedFeature ? (
+                    <>
+                      {/* Meta Strip + Back to Regional */}
+                      <div className="mb-2.5 flex items-center justify-between gap-2">
+                        <span className="font-mono text-[9px] font-semibold text-[#646e67]">
+                          {selectedFeature.coordsText} ·{" "}
+                          {selectedFeature.dateText}
+                        </span>
                         <button
                           type="button"
                           onClick={() => {
-                            setBasemapMode("sar-dark");
-                            if (!layers.sar) toggleLayer("sar");
-                            handleRegionChange("kalimantan");
+                            setSelectedFeature(null);
+                            setActiveBookmark("cover");
+                            if (popupRef.current) popupRef.current.remove();
                           }}
-                          className="cursor-pointer flex-1 rounded-lg bg-[#00c864] px-2.5 py-1.5 font-mono text-[10px] font-bold text-[#03120b] hover:bg-[#00e070]"
+                          className="cursor-pointer shrink-0 rounded-md border border-[#cfc3aa] bg-[#f2ebdc] px-2 py-0.5 font-mono text-[9px] font-bold text-[#2b352f] hover:bg-[#e5dbc6]"
                         >
-                          SAR Radar Mode →
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveAnalyticsTab("sar")}
-                          className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-[10px] font-semibold text-cream-100 hover:bg-white/10"
-                        >
-                          3 SAR Mechanisms →
+                          ← Wilayah
                         </button>
                       </div>
-                    </div>
-                  )}
 
-                  {/* ==================== TAB 2: 📡 SAR ANALYSIS (NASA JPL NISAR 3 SCATTERING MECHANISMS) ==================== */}
-                  {activeAnalyticsTab === "sar" && (
-                    <div className="space-y-2">
-                      {/* Backscatter dB Bar Chart */}
-                      <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2.5">
-                        <div className="font-mono text-[9px] font-semibold tracking-wider text-emerald-300 uppercase">
-                          NISAR L-BAND / S1 · BACKSCATTER (dB)
-                        </div>
-                        <div className="my-2 flex h-20 items-end gap-2">
-                          {[
-                            {
-                              label: "Pre-Fire\n(Volume)",
-                              val: 64,
-                              db: "-6.2 dB",
-                              color: "#00ff96",
-                            },
-                            {
-                              label: "Active\n(Burning)",
-                              val: 24,
-                              db: "-17.8 dB",
-                              color: "#ff3200",
-                            },
-                            {
-                              label: "Post-Fire\n(Surface)",
-                              val: 18,
-                              db: "-19.4 dB",
-                              color: "#ff6400",
-                            },
-                            {
-                              label: "Recovery\n(+6m)",
-                              val: 36,
-                              db: "-13.1 dB",
-                              color: "#ffaa00",
-                            },
-                            {
-                              label: "Recovery\n(+1y)",
-                              val: 50,
-                              db: "-9.8 dB",
-                              color: "#88ff44",
-                            },
-                          ].map((b, i) => (
-                            <div
-                              key={i}
-                              className="flex flex-1 flex-col items-center gap-0.5"
-                            >
-                              <div
-                                className="font-mono text-[8.5px] font-bold"
-                                style={{ color: b.color }}
+                      {/* BOOKMARK PAGE 0: COVER / RINGKASAN ANGKA */}
+                      {activeBookmark === "cover" && (
+                        <div className="space-y-2.5">
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              {
+                                tab: "01",
+                                num: "01",
+                                label: "Sinyal Satelit",
+                                metric: `${selectedFeature.tempC}°C`,
+                                sub: `${selectedFeature.sarDb} dB SAR`,
+                                accent: "border-l-[#0284c7]",
+                              },
+                              {
+                                tab: "02",
+                                num: "02",
+                                label: "Air & Gambut",
+                                metric: `SMI ${selectedFeature.smi}`,
+                                sub: `FWI ${selectedFeature.fwi}`,
+                                accent: "border-l-[#d97706]",
+                              },
+                              {
+                                tab: "03",
+                                num: "03",
+                                label: "Koridor Satwa",
+                                metric: `${selectedFeature.wildlifeScope?.speciesList?.length || 0} Spesies`,
+                                sub: `Radius ${selectedFeature.wildlifeScope?.radiusKm || 60} km`,
+                                accent: "border-l-[#15803d]",
+                              },
+                              {
+                                tab: "04",
+                                num: "04",
+                                label: "Warga & Asap",
+                                metric: `${selectedFeature.windSpeedMs ?? meteomaticsData.windSpeedMs} m/s`,
+                                sub:
+                                  selectedFeature.windCompass ??
+                                  meteomaticsData.windCompass,
+                                accent: "border-l-[#983226]",
+                              },
+                            ].map((item) => (
+                              <button
+                                key={item.tab}
+                                type="button"
+                                onClick={() => setActiveBookmark(item.tab)}
+                                className={`cursor-pointer rounded-md border border-[#e0d6c1] border-l-4 ${item.accent} bg-white/75 p-2 text-left transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm`}
                               >
-                                {b.db}
-                              </div>
-                              <div
-                                className="w-full rounded-t transition-all duration-500"
-                                style={{
-                                  height: `${b.val}px`,
-                                  background: `linear-gradient(180deg, ${b.color} 0%, ${b.color}44 100%)`,
-                                  border: `1px solid ${b.color}88`,
-                                }}
-                              />
-                              <div className="text-center font-mono text-[7.5px] leading-tight whitespace-pre-line text-cream-200/75">
-                                {b.label}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* 3 Radar Scattering Mechanisms (NASA JPL NISAR Wildfires StoryMap) */}
-                      <div className="space-y-1.5 rounded-lg border border-sky-400/25 bg-[#050e1a] p-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] font-bold text-sky-300 uppercase">
-                            3 SAR Scattering Mechanisms (NISAR)
-                          </span>
-                          <a
-                            href="https://storymaps.arcgis.com/stories/4724cd32c4064b9eb5ebe300c1385d07"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-[8.5px] font-bold text-[#00ff96] underline hover:text-emerald-200"
-                          >
-                            NASA StoryMap ↗
-                          </a>
-                        </div>
-
-                        {[
-                          {
-                            badge: "1. Volume",
-                            pol: "High HV / VH (~ -6 dB)",
-                            desc: "Multiple radar bounces within healthy forest canopy & leaves.",
-                            color: "#00ff96",
-                          },
-                          {
-                            badge: "2. Double-Bounce",
-                            pol: "High HH / VV",
-                            desc: "Double reflection between tree trunks & flooded peat swamp water.",
-                            color: "#38bdf8",
-                          },
-                          {
-                            badge: "3. Surface",
-                            pol: "HV Drop (~ -18 dB)",
-                            desc: "Canopy burned away; radar scatters off exposed peat soil.",
-                            color: "#ff5533",
-                          },
-                        ].map((sc, i) => (
-                          <div
-                            key={i}
-                            className="rounded border border-white/10 bg-white/[0.03] px-2 py-1"
-                          >
-                            <div className="flex items-center justify-between font-mono text-[9.5px] font-bold">
-                              <span style={{ color: sc.color }}>
-                                {sc.badge}
-                              </span>
-                              <span className="text-[8.5px] text-cream-200">
-                                {sc.pol}
-                              </span>
-                            </div>
-                            <div className="text-[9.5px] text-cream-300/85">
-                              {sc.desc}
-                            </div>
+                                <div className="flex items-center justify-between font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
+                                  <span>{item.label}</span>
+                                  <span>{item.num}</span>
+                                </div>
+                                <div className="mt-1 font-mono text-xs font-extrabold text-[#1a221d]">
+                                  {item.metric}
+                                </div>
+                                <div className="truncate font-mono text-[9px] text-[#5c665f]">
+                                  {item.sub}
+                                </div>
+                              </button>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* ==================== TAB 3: 🌱 FOREST RECOVERY ==================== */}
-                  {activeAnalyticsTab === "ndvi" && (
-                    <div className="space-y-2">
-                      <div className="rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2.5">
-                        <div className="flex items-center justify-between font-mono text-[9px] font-semibold text-emerald-300 uppercase">
-                          <span>SAR + NDVI RECOVERY (2022–2028)</span>
-                          <span className="text-[#00ff96]">R² = 96.4%</span>
+                          <div className="rounded-md border border-dashed border-[#c7bba2] bg-[#f4eee1] px-2.5 py-2 text-[10.5px] text-[#434d46]">
+                            Pilih{" "}
+                            <Stabilo color="yellow">
+                              bookmark di sisi kanan
+                            </Stabilo>{" "}
+                            untuk membaca penjelasan lengkap tiap dampak.
+                          </div>
                         </div>
-                        <svg
-                          width="100%"
-                          height="105"
-                          viewBox="0 0 380 125"
-                          className="my-1"
-                        >
-                          {[0.2, 0.4, 0.6, 0.8].map((v, i) => (
-                            <g key={i}>
-                              <line
-                                x1="36"
-                                y1={105 - v * 100}
-                                x2="365"
-                                y2={105 - v * 100}
-                                stroke="rgba(255,255,255,0.08)"
-                                strokeWidth="1"
-                              />
-                              <text
-                                x="4"
-                                y={109 - v * 100}
-                                fill="rgba(255,255,255,0.45)"
-                                fontSize="8"
-                                fontFamily="monospace"
+                      )}
+
+                      {/* BOOKMARK PAGE 01: SINYAL SATELIT */}
+                      {activeBookmark === "01" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#0369a1] uppercase">
+                              Bab 01 · Sinyal Satelit
+                            </span>
+                            <span className="rounded bg-[#e0f2fe] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#0369a1]">
+                              {selectedFeature.tempC}°C ·{" "}
+                              {selectedFeature.sarDb} dB
+                            </span>
+                          </div>
+                          <div className="font-display text-sm font-bold text-[#1a221d]">
+                            <Stabilo color="blue">
+                              {selectedFeature.impactChain.sarHeadline}
+                            </Stabilo>
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            {selectedFeature.impactChain.isHighEnergy ? (
+                              <>
+                                Penurunan pantulan balik SAR (
+                                <Stabilo color="yellow">
+                                  {selectedFeature.sarDb} dB, Δ{" "}
+                                  {selectedFeature.sarDrop} dB
+                                </Stabilo>
+                                ) dan energi radiatif{" "}
+                                <Stabilo color="pink">
+                                  {selectedFeature.frpVal} MW
+                                </Stabilo>{" "}
+                                menandakan{" "}
+                                <Stabilo color="yellow">
+                                  kanopi menipis drastis di balik kabut asap
+                                </Stabilo>
+                                .
+                              </>
+                            ) : (
+                              <>
+                                Anomali termal ({selectedFeature.tempK} K)
+                                disertai penurunan koherensi SAR (
+                                <Stabilo color="yellow">
+                                  {selectedFeature.sarDb} dB
+                                </Stabilo>
+                                ) menunjukkan{" "}
+                                <Stabilo color="blue">
+                                  gangguan vegetasi aktif
+                                </Stabilo>{" "}
+                                yang tetap terbaca{" "}
+                                <Stabilo color="yellow">
+                                  menembus awan dan asap
+                                </Stabilo>
+                                .
+                              </>
+                            )}
+                          </p>
+                          <div className="rounded-md border border-[#e0d6c1] bg-white/70 px-2.5 py-1.5 font-mono text-[9.5px] text-[#4a554e]">
+                            Sensor: {selectedFeature.sensor} · FRP{" "}
+                            {selectedFeature.frpVal} MW
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BOOKMARK PAGE 02: AIR & GAMBUT */}
+                      {activeBookmark === "02" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#b45309] uppercase">
+                              Bab 02 · Air &amp; Gambut
+                            </span>
+                            <span className="rounded bg-[#fef3c7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#b45309]">
+                              SMI {selectedFeature.smi} · FWI{" "}
+                              {selectedFeature.fwi}
+                            </span>
+                          </div>
+                          <div className="font-display text-sm font-bold text-[#1a221d]">
+                            <Stabilo color="yellow">
+                              {selectedFeature.impactChain.peatHeadline}
+                            </Stabilo>
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            {selectedFeature.impactChain.isPeat ? (
+                              <>
+                                Lahan gambut dengan kelembapan{" "}
+                                <Stabilo color="yellow">
+                                  SMI {selectedFeature.smi}
+                                </Stabilo>{" "}
+                                rentan mengalami{" "}
+                                <Stabilo color="pink">
+                                  kebakaran bawah permukaan (smoldering)
+                                </Stabilo>{" "}
+                                yang sulit padam serta{" "}
+                                <Stabilo color="yellow">
+                                  melepas karbon tersimpan
+                                </Stabilo>
+                                .
+                              </>
+                            ) : (
+                              <>
+                                Kelembapan tanah saat ini{" "}
+                                <Stabilo color="yellow">
+                                  SMI {selectedFeature.smi}
+                                </Stabilo>{" "}
+                                dengan indeks risiko api{" "}
+                                <Stabilo color="blue">
+                                  FWI {selectedFeature.fwi}
+                                </Stabilo>
+                                , tetap memerlukan{" "}
+                                <Stabilo color="yellow">
+                                  pemantauan kanal dan tepi hutan
+                                </Stabilo>
+                                .
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* BOOKMARK PAGE 03: KORIDOR SATWA */}
+                      {activeBookmark === "03" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#15803d] uppercase">
+                              Bab 03 · Koridor Satwa
+                            </span>
+                            <span className="rounded bg-[#dcfce7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#15803d]">
+                              Radius{" "}
+                              {selectedFeature.wildlifeScope?.radiusKm || 60}{" "}
+                              km
+                            </span>
+                          </div>
+                          <div className="font-display text-sm font-bold text-[#1a221d]">
+                            <Stabilo color="green">
+                              {selectedFeature.impactChain.wildlifeHeadline}
+                            </Stabilo>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {(
+                              selectedFeature.wildlifeScope?.speciesList || []
+                            ).map((sp, idx) => (
+                              <span
+                                key={idx}
+                                className="rounded-full border border-[#b7dcc3] bg-[#edf7f0] px-2 py-0.5 text-[9.5px] font-bold text-[#165b33]"
                               >
-                                {v.toFixed(1)}
-                              </text>
-                            </g>
-                          ))}
-                          <path
-                            d="M200,62 Q245,45 290,34 Q330,26 360,20 L360,38 Q330,44 290,52 Q245,62 200,72 Z"
-                            fill="rgba(0,255,150,0.14)"
-                          />
-                          <polyline
-                            points="40,24 80,26 120,88 160,82 200,66"
-                            fill="none"
-                            stroke="#00ffc8"
-                            strokeWidth="2.5"
-                          />
-                          <polyline
-                            points="200,66 245,52 290,42 330,33 360,28"
-                            fill="none"
-                            stroke="#00ff96"
-                            strokeWidth="2"
-                            strokeDasharray="5,3"
-                          />
-                          <line
-                            x1="120"
-                            y1="12"
-                            x2="120"
-                            y2="105"
-                            stroke="#ff3200"
-                            strokeWidth="1"
-                            strokeDasharray="3,2"
-                          />
-                          <text
-                            x="124"
-                            y="22"
-                            fill="#ff5533"
-                            fontSize="8"
-                            fontFamily="monospace"
-                          >
-                            🔥 Fire Event
-                          </text>
-                          <text
-                            x="235"
-                            y="18"
-                            fill="#00ff96"
-                            fontSize="8"
-                            fontFamily="monospace"
-                          >
-                            --- ML Projection (RF)
-                          </text>
-                          {[
-                            "2022",
-                            "2023",
-                            "2024",
-                            "2025",
-                            "2026",
-                            "2027",
-                            "2028",
-                          ].map((yr, i) => (
-                            <text
-                              key={i}
-                              x={40 + i * 52}
-                              y="118"
-                              fill="rgba(255,255,255,0.45)"
-                              fontSize="8"
-                              fontFamily="monospace"
-                            >
-                              {yr}
-                            </text>
-                          ))}
-                        </svg>
-                        <div className="font-mono text-[9.5px] text-cream-200/80">
-                          📈 Estimated return to canopy baseline (Volume
-                          Scattering): <strong>~4.2 years</strong>
+                                {sp.name} ({sp.status})
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            {selectedFeature.wildlifeScope?.impactSummary ||
+                              "Koridor habitat terancam fragmentasi dan paparan asap pekat."}{" "}
+                            Fokus pantauan:{" "}
+                            <Stabilo color="green">
+                              {selectedFeature.wildlifeScope?.corridorName ||
+                                "Koridor Hutan & Gambut Terdekat"}
+                            </Stabilo>
+                            .
+                          </p>
+                          <div className="rounded-md border border-[#e5c99b] bg-[#fdf6e7] px-2.5 py-1.5 text-[9.5px] italic text-[#7c5216]">
+                            Batas bukti ilmiah:{" "}
+                            <Stabilo color="yellow">
+                              tekanan habitat, bukan bukti kematian satwa
+                            </Stabilo>
+                            .
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BOOKMARK PAGE 04: WARGA & ASAP */}
+                      {activeBookmark === "04" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#983226] uppercase">
+                              Bab 04 · Warga &amp; Asap
+                            </span>
+                            <span className="rounded bg-[#fee2e2] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#983226]">
+                              {selectedFeature.windSpeedMs ??
+                                meteomaticsData.windSpeedMs}{" "}
+                              m/s
+                            </span>
+                          </div>
+                          <div className="font-display text-sm font-bold text-[#1a221d]">
+                            <Stabilo color="pink">
+                              {selectedFeature.impactChain.communityHeadline}
+                            </Stabilo>
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            Angin{" "}
+                            <Stabilo color="yellow">
+                              {selectedFeature.windCompass ??
+                                meteomaticsData.windCompass}{" "}
+                              (
+                              {selectedFeature.windSpeedMs ??
+                                meteomaticsData.windSpeedMs}{" "}
+                              m/s)
+                            </Stabilo>{" "}
+                            berpotensi membawa partikulat asap ke{" "}
+                            <Stabilo color="pink">
+                              permukiman hilir dan wilayah udara sekitar
+                            </Stabilo>
+                            .
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* REGIONAL OVERVIEW PAGE */
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                          <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
+                            Zona Gambut
+                          </div>
+                          <div className="mt-0.5 font-mono text-sm font-extrabold text-[#b45309]">
+                            <Stabilo color="yellow">
+                              {ecosystemSummary.peatCount}
+                            </Stabilo>
+                            <span className="ml-1 text-[10px] font-normal text-[#646e67]">
+                              / {ecosystemSummary.total}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                          <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
+                            Irisan Habitat
+                          </div>
+                          <div className="mt-0.5 font-mono text-sm font-extrabold text-[#15803d]">
+                            <Stabilo color="green">
+                              {ecosystemSummary.wildlifeOverlapCount}
+                            </Stabilo>
+                            <span className="ml-1 text-[10px] font-normal text-[#646e67]">
+                              titik
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                          <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
+                            Energi Tinggi
+                          </div>
+                          <div className="mt-0.5 font-mono text-sm font-extrabold text-[#983226]">
+                            <Stabilo color="pink">
+                              {ecosystemSummary.highIntensityCount}
+                            </Stabilo>
+                            <span className="ml-1 text-[10px] font-normal text-[#646e67]">
+                              ≥35 MW
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                          <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
+                            Gambut &amp; Angin
+                          </div>
+                          <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#0369a1]">
+                            <Stabilo color="blue">
+                              SMI {meteomaticsData.soilMoistureIdx}
+                            </Stabilo>
+                            <span className="block text-[9px] font-normal text-[#646e67]">
+                              {meteomaticsData.windSpeedMs} m/s
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* ==================== TAB 4: 🦧 INDONESIA WILDLIFE IMPACT ==================== */}
-                  {activeAnalyticsTab === "wildlife" && (
-                    <div className="space-y-1.5">
-                      <div className="flex flex-col gap-1.5 rounded-lg border border-emerald-400/20 bg-[#050e1a] p-2.5">
-                        <div className="font-mono text-[9px] font-semibold tracking-wider text-emerald-300 uppercase">
-                          ENDEMIC INDONESIAN WILDLIFE IN WILDFIRE ZONES
+                      <div>
+                        <div className="mb-1 font-mono text-[9px] font-bold tracking-wider text-[#5c665f] uppercase">
+                          Koridor Prioritas (Klik untuk Fokus)
                         </div>
-                        {[
-                          {
-                            icon: "🦧",
-                            name: "Bornean Orangutan & Proboscis Monkey (Kalimantan)",
-                            status: "CR",
-                            statusColor: "#ff3200",
-                            overlap:
-                              "Sebangau Peat Dome, Tanjung Puting & Kutai",
-                            pct: 82,
-                            coords: [113.92, -2.48],
-                          },
-                          {
-                            icon: "🐅",
-                            name: "Sumatran Tiger & Elephant (Riau/Jambi/South Sumatra)",
-                            status: "CR",
-                            statusColor: "#ff3200",
-                            overlap:
-                              "Kampar Peat Peninsula, Berbak–Sembilang & OKI",
-                            pct: 79,
-                            coords: [103.85, -1.65],
-                          },
-                          {
-                            icon: "🦏",
-                            name: "Sumatran Orangutan & Rhino (Leuser/Way Kambas)",
-                            status: "CR",
-                            statusColor: "#ff3200",
-                            overlap: "Tripa Peat Swamp Aceh & Way Kambas NP",
-                            pct: 64,
-                            coords: [96.45, 4.12],
-                          },
-                          {
-                            icon: "🦅",
-                            name: "Javan Hawk-Eagle & Leopard (East Java)",
-                            status: "CR",
-                            statusColor: "#ff8800",
-                            overlap: "Bromo–Tengger–Semeru & Baluran Savanna",
-                            pct: 58,
-                            coords: [113.65, -7.95],
-                          },
-                          {
-                            icon: "🦬",
-                            name: "Lowland Anoa & Maleo Bird (Sulawesi)",
-                            status: "EN",
-                            statusColor: "#ff8800",
-                            overlap: "Rawa Aopa Watumohai & Morowali Corridor",
-                            pct: 61,
-                            coords: [121.55, -2.95],
-                          },
-                          {
-                            icon: "🦜",
-                            name: "Bird-of-Paradise, Cassowary & Wallaby (Papua)",
-                            status: "VU",
-                            statusColor: "#facc15",
-                            overlap: "Wasur Wetland Savanna Merauke & Mappi",
-                            pct: 52,
-                            coords: [140.15, -7.55],
-                          },
-                        ].map((sp, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => handleFocusWildlifeCorridor(sp)}
-                            className="cursor-pointer flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:border-emerald-400/40 hover:bg-white/10"
-                          >
-                            <span className="text-base">{sp.icon}</span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="truncate text-[10.5px] font-bold text-cream-50">
-                                  {sp.name}
-                                </span>
-                                <span
-                                  className="shrink-0 rounded px-1 py-0.2 font-mono text-[8px] font-bold"
-                                  style={{
-                                    background: `${sp.statusColor}25`,
-                                    color: sp.statusColor,
-                                    border: `1px solid ${sp.statusColor}55`,
-                                  }}
-                                >
-                                  {sp.status}
-                                </span>
-                              </div>
-                              <div className="truncate font-mono text-[8.5px] text-cream-200/75">
-                                {sp.overlap}
-                              </div>
-                            </div>
-                            <div className="w-9 text-right">
-                              <div
-                                className="font-mono text-[9px] font-bold"
-                                style={{ color: sp.statusColor }}
+                        <div className="divide-y divide-[#e0d6c1] rounded-md border border-[#e0d6c1] bg-white/70">
+                          {ecosystemSummary.corridorImpacts
+                            .slice(0, 4)
+                            .map((cor, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => handleFocusWildlifeCorridor(cor)}
+                                className="cursor-pointer flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-[#edf7f0]"
                               >
-                                {sp.pct}%
-                              </div>
-                              <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{
-                                    width: `${sp.pct}%`,
-                                    background: sp.statusColor,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[11px] font-bold text-[#1a221d]">
+                                    {cor.corridorName}
+                                  </div>
+                                  <div className="truncate text-[9.5px] text-[#5c665f]">
+                                    {cor.island} · {cor.iucnStatus}
+                                  </div>
+                                </div>
+                                <span className="shrink-0 font-mono text-[10px] font-bold text-[#983226]">
+                                  {cor.hotspotCount} titik
+                                </span>
+                              </button>
+                            ))}
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Side Index Bookmark Tabs (Pop out when selectedFeature is active) */}
+            {selectedFeature && (
+              <div className="pointer-events-auto mt-3 -ml-0.5 flex flex-col gap-1.5">
+                {[
+                  {
+                    id: "cover",
+                    label: "Ringkas",
+                    color: "bg-[#2b352f] text-[#faf6ee]",
+                    idle: "bg-[#e9e0ce] text-[#454f48]",
+                  },
+                  {
+                    id: "01",
+                    label: "01 · Radar",
+                    color: "bg-[#0369a1] text-white",
+                    idle: "bg-[#dbeafe] text-[#1e3a8a]",
+                  },
+                  {
+                    id: "02",
+                    label: "02 · Gambut",
+                    color: "bg-[#b45309] text-white",
+                    idle: "bg-[#fef3c7] text-[#78350f]",
+                  },
+                  {
+                    id: "03",
+                    label: "03 · Satwa",
+                    color: "bg-[#15803d] text-white",
+                    idle: "bg-[#dcfce7] text-[#14532d]",
+                  },
+                  {
+                    id: "04",
+                    label: "04 · Asap",
+                    color: "bg-[#983226] text-white",
+                    idle: "bg-[#fee2e2] text-[#7f1d1d]",
+                  },
+                ].map((bm) => {
+                  const isActive = activeBookmark === bm.id;
+                  return (
+                    <button
+                      key={bm.id}
+                      type="button"
+                      onClick={() => setActiveBookmark(bm.id)}
+                      className={`cursor-pointer whitespace-nowrap rounded-r-lg border border-l-0 border-black/15 py-1.5 text-left font-mono text-[9.5px] font-bold shadow-md transition-all ${isActive
+                        ? `${bm.color} w-26 pl-2.5 pr-2 translate-x-0.5`
+                        : `${bm.idle} w-22 pl-2 pr-1.5 opacity-90 hover:w-25 hover:opacity-100`
+                        }`}
+                    >
+                      {bm.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== BEFORE / AFTER COMPARISON DECK (HANYA MUNCUL SAAT KLIK ICON API) ==================== */}
+        {!isEmbed && playerOpen && (
+          <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-[660px] -translate-x-1/2">
+            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8]/95 text-[#1d2621] shadow-[0_20px_48px_rgba(0,0,0,0.48),3px_3px_0_#ded4be] backdrop-blur-md">
+              {/* Top Console Strip: Play/Pause + Readout + EO/SAR Switch + Close */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#dfd4be] bg-gradient-to-r from-[#163a28] via-[#1c4732] to-[#143324] px-3.5 py-2 text-[#faf6ee]">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPlayingPhase((v) => !v)}
+                    title={
+                      isPlayingPhase
+                        ? "Jeda Perbandingan"
+                        : "Putar Otomatis (2014 vs Sekarang)"
+                    }
+                    className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border shadow-md transition-all ${
+                      isPlayingPhase
+                        ? "border-[#fca5a5]/60 bg-[#983226] text-white"
+                        : "border-[#e5c787]/70 bg-[#e5c787] text-[#14261c] hover:bg-[#efd49b]"
+                    }`}
+                  >
+                    {isPlayingPhase ? (
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="h-3.5 w-3.5 fill-current"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 3h3v10H4V3zm5 0h3v10H9V3z" />
+                      </svg>
+                    ) : (
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="ml-0.5 h-3.5 w-3.5 fill-current"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 2.5l9 5.5-9 5.5V2.5z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <div className="flex flex-col border-l border-white/15 pl-2.5">
+                    <span className="font-mono text-[9px] font-bold tracking-wider text-[#e5c787] uppercase">
+                      {selectedFeature?.title || "Perbandingan Kondisi Lahan"}
+                    </span>
+                    <span className="text-xs font-bold tracking-tight text-white">
+                      {activePhaseConfig.title}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBasemapMode((m) =>
+                        m === "sar-dark" ? "satellite" : "sar-dark",
+                      )
+                    }
+                    className={`cursor-pointer rounded-full border px-3 py-1 font-mono text-[9.5px] font-bold transition-all ${
+                      basemapMode === "sar-dark"
+                        ? "border-[#7dd3fc]/60 bg-[#0369a1] text-white shadow-xs"
+                        : "border-[#e5c787]/60 bg-[#faf6ee]/10 text-[#f5e7c6] hover:bg-[#faf6ee]/20"
+                    }`}
+                  >
+                    {basemapMode === "sar-dark"
+                      ? "Mode Radar SAR · Tembus Asap"
+                      : "Mode Optik EO · Tembus dgn SAR →"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPlayingPhase(false);
+                      setSarPhase(1);
+                      setPlayerOpen(false);
+                    }}
+                    title="Tutup Pembanding"
+                    className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-[#faf6ee] transition-colors hover:bg-white/25"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* 2-State Before / After Switcher */}
+              <div className="grid grid-cols-2 gap-2 px-3.5 pt-2.5 pb-2">
+                {SAR_TIMELINE_PHASES.map((ph) => {
+                  const active = ph.id === sarPhase;
+                  return (
+                    <button
+                      key={ph.id}
+                      type="button"
+                      onClick={() => {
+                        setIsPlayingPhase(false);
+                        setSarPhase(ph.id);
+                      }}
+                      className={`cursor-pointer flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-all ${
+                        active
+                          ? "border-transparent text-white shadow-md"
+                          : "border-[#d8ccb4] bg-[#faf6ee] text-[#3f4a43] hover:border-[#1b5e3a]"
+                      }`}
+                      style={
+                        active ? { backgroundColor: ph.color } : undefined
+                      }
+                    >
+                      <div className="min-w-0">
+                        <div className="font-mono text-[9px] font-bold uppercase opacity-85">
+                          {ph.id === 0 ? "Arsip Historis" : "Kondisi Terkini"}
+                        </div>
+                        <div className="truncate text-xs font-extrabold">
+                          {ph.short}
+                        </div>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold ${
+                          active
+                            ? "bg-black/20 text-white"
+                            : "bg-[#ebe2cf] text-[#3f4a43]"
+                        }`}
+                      >
+                        {ph.id === 0 ? "2014" : "LIVE"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Phase Description Strip */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e4dac5] bg-[#f1eadc] px-3.5 py-1.5 text-[10.5px] text-[#2f3933]">
+                <span className="min-w-0 flex-1 leading-snug">
+                  {activePhaseConfig.desc}
+                </span>
+                <span className="shrink-0 rounded-md border border-[#d6cbb5] bg-[#faf6ee] px-2 py-0.5 font-mono text-[9px] font-bold text-[#1b5e3a]">
+                  {activePhaseConfig.badge}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -2070,16 +2528,15 @@ export default function MapPage() {
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white bg-[#983226] text-[10px] text-white">
                 🔥
               </span>
-              Indonesia Wildfire Hotspots ({filteredFireEvents.length} NASA
-              Worldview Points)
+              Titik Panas Fase Aktif ({phaseFireEvents.length})
             </span>
             <span className="flex items-center gap-1.5 font-semibold text-emerald-300">
               <span>🦧🐅🦜</span>
-              Endemic Wildlife Habitat Scope (IUCN CR/EN)
+              Koridor Habitat Satwa Endemik (IUCN CR/EN)
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-xs border border-sky-400 bg-sky-500/40" />
-              SAR Radar Swaths (NISAR / Sentinel-1)
+              Jejak Sapuan Radar SAR (NISAR / Sentinel-1)
             </span>
           </div>
 
