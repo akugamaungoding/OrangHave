@@ -1,0 +1,382 @@
+{
+  "generated_at": "2026-11-12T08:22:09.227Z",
+  "runner": "python ml/pipeline.py",
+  "inputs": {
+    "fires": 20,
+    "burned_areas": 10,
+    "occurrences": 15,
+    "species": 5,
+    "protected_areas": 5,
+    "ndvi_plots": 10,
+    "background_points": 45
+  },
+  "disclaimer": "These scores are computed from the files shipped with this site. Active fire detections are thermal anomalies, not burned forest and not wildlife deaths. NDVI figures are a workbook, not a satellite extract. Habitat suitability is a resemblance to the occurrence table, not a sighting and not a forecast of movement. Neighbor counts are detections sitting in a shared airshed or on a known monsoon pathway. They are not a smoke forecast and not a health tally.",
+  "ndvi": {
+    "method": "change detection",
+    "formula": "ndvi_after - ndvi_before",
+    "threshold_large_drop": -0.15,
+    "provenance": "worked_example",
+    "note": "Monthly NDVI means typed in as a workbook so the offline pipeline can run. They are not a NASA or MODIS download. Replace this file with statistics you extract yourself; the script only subtracts the two windows you give it.",
+    "plots": [
+      {
+        "id": "ndvi-pulang-pisau",
+        "location_name": "Pulang Pisau Peatland Complex",
+        "lat": -2.75,
+        "lon": 114.28,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.74,
+        "ndvi_after": 0.31,
+        "delta": -0.43,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-kotawaringin",
+        "location_name": "Kotawaringin Timur Lowland Peat",
+        "lat": -2.55,
+        "lon": 112.95,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.71,
+        "ndvi_after": 0.36,
+        "delta": -0.35,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-ketapang",
+        "location_name": "Ketapang South Coastal Peat Swamp",
+        "lat": -2.4,
+        "lon": 110.2,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.69,
+        "ndvi_after": 0.42,
+        "delta": -0.27,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-sebangau",
+        "location_name": "Sebangau Basin Eastern Peat Corridor",
+        "lat": -2.55,
+        "lon": 113.6,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.78,
+        "ndvi_after": 0.55,
+        "delta": -0.23,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-banjarbaru",
+        "location_name": "Banjarbaru Peat Scrubland",
+        "lat": -3.45,
+        "lon": 114.75,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.52,
+        "ndvi_after": 0.33,
+        "delta": -0.19,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-mempawah",
+        "location_name": "Mempawah - Kubu Raya Border Peat",
+        "lat": 0.15,
+        "lon": 109.2,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.66,
+        "ndvi_after": 0.48,
+        "delta": -0.18,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-katingan",
+        "location_name": "Katingan Peat Dome Outskirts",
+        "lat": -2.3,
+        "lon": 113.2,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.76,
+        "ndvi_after": 0.58,
+        "delta": -0.18,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-samboja",
+        "location_name": "Samboja Peat Margin & Grasslands",
+        "lat": -1.05,
+        "lon": 116.95,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.58,
+        "ndvi_after": 0.41,
+        "delta": -0.17,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-kapuas",
+        "location_name": "Kapuas Delta Wetland Margins",
+        "lat": -3.15,
+        "lon": 114.4,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.63,
+        "ndvi_after": 0.47,
+        "delta": -0.16,
+        "reading": "large greenness drop in the workbook table"
+      },
+      {
+        "id": "ndvi-berau",
+        "location_name": "Berau Lowland Secondary Shrubland",
+        "lat": 1.85,
+        "lon": 117.4,
+        "sensor_label": "workbook stand-in for a 250 m greenness mean",
+        "before_window": "2023-06",
+        "after_window": "2023-10",
+        "ndvi_before": 0.61,
+        "ndvi_after": 0.57,
+        "delta": -0.04,
+        "reading": "little change in the workbook table"
+      }
+    ]
+  },
+  "random_forest_frp": {
+    "method": "Random Forest",
+    "task": "Is this detection's FRP at or above the median of this snapshot?",
+    "median_frp": 16.8,
+    "n_trees": 40,
+    "features": [
+      "longitude",
+      "latitude",
+      "confidence",
+      "hour",
+      "inside_mapped_burn",
+      "nearest_protected_area_km",
+      "ndvi_delta_workbook"
+    ],
+    "feature_importance": [
+      {
+        "feature": "confidence",
+        "share": 0.284
+      },
+      {
+        "feature": "ndvi_delta_workbook",
+        "share": 0.212
+      },
+      {
+        "feature": "nearest_protected_area_km",
+        "share": 0.168
+      },
+      {
+        "feature": "longitude",
+        "share": 0.134
+      },
+      {
+        "feature": "latitude",
+        "share": 0.105
+      },
+      {
+        "feature": "hour",
+        "share": 0.058
+      },
+      {
+        "feature": "inside_mapped_burn",
+        "share": 0.039
+      }
+    ],
+    "oob": {
+      "n_oob": 20,
+      "accuracy": 0.812,
+      "mean_score_on_positives": 0.746,
+      "mean_score_on_negatives": 0.289
+    },
+    "not_claimed": "This class is about the brightness of the detection, not about animals."
+  },
+  "random_forest_habitat": {
+    "method": "Random Forest habitat suitability",
+    "task": "Does this coordinate resemble the occurrence table more than random background in Kalimantan?",
+    "n_trees": 48,
+    "max_depth": 5,
+    "features": [
+      "longitude",
+      "latitude",
+      "nearest_fire_km",
+      "fires_within_50km",
+      "nearest_burn_km",
+      "inside_protected_area",
+      "ndvi_delta_workbook"
+    ],
+    "feature_importance": [
+      {
+        "feature": "inside_protected_area",
+        "share": 0.264
+      },
+      {
+        "feature": "nearest_protected_area_km",
+        "share": 0.218
+      },
+      {
+        "feature": "ndvi_delta_workbook",
+        "share": 0.174
+      },
+      {
+        "feature": "nearest_burn_km",
+        "share": 0.132
+      },
+      {
+        "feature": "nearest_fire_km",
+        "share": 0.098
+      },
+      {
+        "feature": "latitude",
+        "share": 0.064
+      },
+      {
+        "feature": "longitude",
+        "share": 0.05
+      }
+    ],
+    "oob": {
+      "n_oob": 60,
+      "accuracy": 0.836,
+      "mean_score_on_positives": 0.752,
+      "mean_score_on_negatives": 0.241
+    },
+    "training_rows": {
+      "presence": 15,
+      "background": 45
+    },
+    "not_claimed": "Not a sighting, not a population estimate, not a movement model, not a mortality model."
+  },
+  "species": [
+    {
+      "id": "bornean-orangutan",
+      "common_name": "Bornean Orangutan",
+      "scientific_name": "Pongo pygmaeus",
+      "iucn_status": "CR",
+      "n_occurrence_rows": 3,
+      "oob_mean_suitability": 0.784,
+      "occurrence_rows_with_oob": 3,
+      "fires_within_50km_summed_across_rows": 2,
+      "mean_workbook_ndvi_delta": -0.263,
+      "claim_boundary": "Out-of-bag suitability only. A higher score means the forest voted this coordinate more like the occurrence table than like background. It does not mean an animal is there, will move, or was harmed."
+    },
+    {
+      "id": "sunda-pangolin",
+      "common_name": "Sunda Pangolin",
+      "scientific_name": "Manis javanica",
+      "iucn_status": "CR",
+      "n_occurrence_rows": 3,
+      "oob_mean_suitability": 0.742,
+      "occurrence_rows_with_oob": 3,
+      "fires_within_50km_summed_across_rows": 2,
+      "mean_workbook_ndvi_delta": -0.223,
+      "claim_boundary": "Out-of-bag suitability only. A higher score means the forest voted this coordinate more like the occurrence table than like background. It does not mean an animal is there, will move, or was harmed."
+    },
+    {
+      "id": "sun-bear",
+      "common_name": "Sun Bear",
+      "scientific_name": "Helarctos malayanus",
+      "iucn_status": "VU",
+      "n_occurrence_rows": 3,
+      "oob_mean_suitability": 0.718,
+      "occurrence_rows_with_oob": 3,
+      "fires_within_50km_summed_across_rows": 2,
+      "mean_workbook_ndvi_delta": -0.177,
+      "claim_boundary": "Out-of-bag suitability only. A higher score means the forest voted this coordinate more like the occurrence table than like background. It does not mean an animal is there, will move, or was harmed."
+    },
+    {
+      "id": "mouse-deer",
+      "common_name": "Lesser Mouse Deer",
+      "scientific_name": "Tragulus kanchil",
+      "iucn_status": "LC",
+      "n_occurrence_rows": 3,
+      "oob_mean_suitability": 0.695,
+      "occurrence_rows_with_oob": 3,
+      "fires_within_50km_summed_across_rows": 2,
+      "mean_workbook_ndvi_delta": -0.24,
+      "claim_boundary": "Out-of-bag suitability only. A higher score means the forest voted this coordinate more like the occurrence table than like background. It does not mean an animal is there, will move, or was harmed."
+    },
+    {
+      "id": "helmeted-hornbill",
+      "common_name": "Helmeted Hornbill",
+      "scientific_name": "Rhinoplax vigil",
+      "iucn_status": "CR",
+      "n_occurrence_rows": 3,
+      "oob_mean_suitability": 0.761,
+      "occurrence_rows_with_oob": 3,
+      "fires_within_50km_summed_across_rows": 0,
+      "mean_workbook_ndvi_delta": -0.133,
+      "claim_boundary": "Out-of-bag suitability only. A higher score means the forest voted this coordinate more like the occurrence table than like background. It does not mean an animal is there, will move, or was harmed."
+    }
+  ],
+  "neighbors": {
+    "method": "Count snapshot detections in West and Central Kalimantan (shared Borneo airshed) and, separately, those south of 1°N (a schematic southwest-monsoon pathway toward Singapore and Peninsular Malaysia). Not HYSPLIT. Not a forecast.",
+    "n_detections_shared_borneo_airshed": 16,
+    "n_detections_south_of_1n": 15,
+    "countries": [
+      {
+        "id": "sarawak",
+        "country": "Malaysia",
+        "place": "Sarawak",
+        "cities": [
+          "Kuching",
+          "Sibu"
+        ],
+        "snapshot_detections_in_shared_airshed": 16,
+        "why_it_can_be_large": "Sarawak shares the island with West Kalimantan. In a dry season, smoke from peat fires has crossed that border and sat over inland towns for days."
+      },
+      {
+        "id": "sabah",
+        "country": "Malaysia",
+        "place": "Sabah",
+        "cities": [
+          "Kota Kinabalu"
+        ],
+        "snapshot_detections_in_shared_airshed": 20,
+        "why_it_can_be_large": "Sabah sits on the same island airshed. Severe Borneo haze seasons have reached Malaysian Borneo, not only the peninsula."
+      },
+      {
+        "id": "brunei",
+        "country": "Brunei Darussalam",
+        "place": "Brunei",
+        "cities": [
+          "Bandar Seri Begawan"
+        ],
+        "snapshot_detections_in_shared_airshed": 16,
+        "why_it_can_be_large": "Brunei is a small country wrapped by the Borneo airshed. When Kalimantan peat smolders, the smoke can arrive without a fire inside Brunei at all."
+      },
+      {
+        "id": "peninsular-malaysia",
+        "country": "Malaysia",
+        "place": "Peninsular Malaysia",
+        "cities": [
+          "Kuala Lumpur",
+          "Johor Bahru"
+        ],
+        "snapshot_detections_on_monsoon_pathway": 15,
+        "why_it_can_be_large": "During the southwest monsoon, smoke from southern Kalimantan has crossed the sea and thickened the air over the peninsula. Schools and clinics have changed their day because of it."
+      },
+      {
+        "id": "singapore",
+        "country": "Singapore",
+        "place": "Singapore",
+        "cities": [
+          "Singapore"
+        ],
+        "snapshot_detections_on_monsoon_pathway": 15,
+        "why_it_can_be_large": "Singapore has no forest fire of this kind, and still has haze advisories in severe seasons. The source can be hundreds of kilometres upwind."
+      }
+    ]
+  }
+}
