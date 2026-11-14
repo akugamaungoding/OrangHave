@@ -68,6 +68,24 @@ function prewarmWaybackTiles(lat, lon, z = 10) {
   }
 }
 
+const WILDLIFE_ART_MAP = {
+  "bornean-orangutan": "/assets/art/orangutan.svg",
+  "bornean orangutan": "/assets/art/orangutan.svg",
+  "sunda-pangolin": "/assets/art/pangolin.svg",
+  "sunda pangolin": "/assets/art/pangolin.svg",
+  "sun-bear": "/assets/art/sunbear.svg",
+  "sun bear": "/assets/art/sunbear.svg",
+  "mouse-deer": "/assets/art/mousedeer.svg",
+  "lesser mouse deer": "/assets/art/mousedeer.svg",
+  "helmeted-hornbill": "/assets/art/hornbill.svg",
+  "helmeted hornbill": "/assets/art/hornbill.svg",
+};
+
+function getWildlifeArtUrl(speciesIdOrName = "") {
+  const key = String(speciesIdOrName).toLowerCase().trim();
+  return WILDLIFE_ART_MAP[key] || "/assets/art/orangutan.svg";
+}
+
 // 2 Fase Perbandingan Lahan: Historis Sebelum Kebakaran (Arsip Satelit 2014) vs Sekarang Ketika Terbakar
 const SAR_TIMELINE_PHASES = [
   {
@@ -499,6 +517,8 @@ export default function MapPage() {
   const [notebookOpen, setNotebookOpen] = useState(false);
   const [activeBookmark, setActiveBookmark] = useState("cover");
   const [selectedFeature, setSelectedFeature] = useState(null);
+  const [selectedWildlife, setSelectedWildlife] = useState(null);
+  const [activeWildlifeTab, setActiveWildlifeTab] = useState("profil");
 
   const [layers, setLayers] = useState({
     hotspots: true, // Pin Kebakaran + Pendaran Termal MODIS/VIIRS
@@ -521,15 +541,27 @@ export default function MapPage() {
   const [sarSwathsGeoJSON, setSarSwathsGeoJSON] = useState(SAR_SWATH_GEOJSON);
   const [scrapingNasa, setScrapingNasa] = useState(false);
   const [mlScores, setMlScores] = useState(null);
+  const [iucnSpecies, setIucnSpecies] = useState([]);
+  const [gbifOccurrences, setGbifOccurrences] = useState([]);
 
   useEffect(() => {
     let active = true;
-    fetch("/data-source/ml-scores.json")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (active && json) setMlScores(json);
-      })
-      .catch(() => {});
+    Promise.all([
+      fetch("/data-source/ml-scores.json")
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null),
+      fetch("/data-source/iucn-species.json")
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => []),
+      fetch("/data-source/gbif-occurrences.json")
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => []),
+    ]).then(([mlJson, iucnJson, gbifJson]) => {
+      if (!active) return;
+      if (mlJson) setMlScores(mlJson);
+      if (Array.isArray(iucnJson)) setIucnSpecies(iucnJson);
+      if (Array.isArray(gbifJson)) setGbifOccurrences(gbifJson);
+    });
     return () => {
       active = false;
     };
@@ -833,6 +865,88 @@ export default function MapPage() {
   const latestZonesGeoJSONRef = useRef(burningZonesGeoJSON);
   latestZonesGeoJSONRef.current = burningZonesGeoJSON;
 
+  // Fungsi ketika Ikon Satwa Endemik di peta diklik -> buka Buku Panduan Satwa (Profil, Habitat, Ancaman, Proteksi SAR)
+  const handleSelectWildlifePin = (occ) => {
+    const lon = Number(occ.longitude);
+    const lat = Number(occ.latitude);
+    const matchedSpecies =
+      iucnSpecies.find(
+        (sp) =>
+          sp.common_name.toLowerCase() === String(occ.species).toLowerCase() ||
+          sp.scientific_name.toLowerCase() ===
+            String(occ.scientific_name).toLowerCase(),
+      ) || {};
+
+    let nearestFireKm = null;
+    let nearestFireLocation = null;
+    const toRad = (d) => (d * Math.PI) / 180;
+    for (const f of filteredFireEvents) {
+      const fLat = Number(f.latitude);
+      const fLon = Number(f.longitude);
+      if (Number.isNaN(fLat) || Number.isNaN(fLon)) continue;
+      const dLat = toRad(fLat - lat);
+      const dLon = toRad(fLon - lon);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat)) *
+          Math.cos(toRad(fLat)) *
+          Math.sin(dLon / 2) ** 2;
+      const km = 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+      if (nearestFireKm === null || km < nearestFireKm) {
+        nearestFireKm = Math.round(km);
+        nearestFireLocation =
+          f.kabupaten || f.provinsi || "Titik Api Aktif Terdekat";
+      }
+    }
+
+    const ndviPlots = mlScores?.ndvi?.plots || ndviSamplesData?.plots || [];
+    const nearestNdvi = findNearestNdviPlot(lat, lon, ndviPlots);
+
+    if (popupRef.current) popupRef.current.remove();
+    setSelectedFeature(null);
+    setPlayerOpen(false);
+    setIsPlayingPhase(false);
+    setSelectedWildlife({
+      id: occ.id,
+      commonName: matchedSpecies.common_name || occ.species,
+      scientificName:
+        matchedSpecies.scientific_name || occ.scientific_name || "",
+      status: matchedSpecies.red_list_status || "CR",
+      category: matchedSpecies.red_list_category || "Critically Endangered",
+      populationTrend: matchedSpecies.population_trend || "decreasing",
+      storyRole: matchedSpecies.story_role || "Endemic Rainforest Species",
+      habitat:
+        matchedSpecies.habitat ||
+        "Lowland dipterocarp & tropical peat swamp forest",
+      description:
+        matchedSpecies.description ||
+        "Peatland fires and canopy fragmentation disrupt foraging corridors and shelter.",
+      threats: matchedSpecies.threats || ["habitat loss", "fire", "smoke haze"],
+      occurrencesCount: matchedSpecies.occurrences_count || 0,
+      lastAssessed: matchedSpecies.last_assessed || "2024",
+      artUrl: getWildlifeArtUrl(matchedSpecies.id || occ.species),
+      province: occ.province || "Kalimantan",
+      locality: occ.locality || "Protected Corridor",
+      eventDate: occ.event_date || String(occ.year || "2024"),
+      dataset: occ.dataset || "GBIF Field Observation",
+      coordsText: `${lat.toFixed(4)}, ${lon.toFixed(4)}`,
+      nearestFireKm,
+      nearestFireLocation,
+      nearestNdvi,
+    });
+    setActiveWildlifeTab("profil");
+    setNotebookOpen(true);
+
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [lon, lat],
+        zoom: Math.max(mapRef.current.getZoom(), 9.2),
+        duration: 1000,
+        essential: true,
+      });
+    }
+  };
+
   // Fungsi ketika Ikon Pin Kebakaran di peta diklik -> perbarui Impact Card + tampilkan Popup ringkas
   const handleSelectHotspotPin = (hotspot, idx = 0) => {
     const lon = Number(hotspot.longitude);
@@ -900,6 +1014,7 @@ export default function MapPage() {
       habitatTrees: mlScores?.random_forest_habitat?.n_trees ?? 48,
     };
 
+    setSelectedWildlife(null);
     setActiveBookmark("cover");
     setNotebookOpen(true);
     setPlayerOpen(true);
@@ -1342,8 +1457,59 @@ export default function MapPage() {
       markers.push(marker);
     });
 
-    // Badge Lingkup Habitat Satwa Endemik Indonesia
+    // Pin Satwa Endemik Bergambar (dari GBIF + IUCN) & Badge Koridor Habitat
     if (layers.protected) {
+      gbifOccurrences.forEach((occ) => {
+        const wLon = Number(occ.longitude);
+        const wLat = Number(occ.latitude);
+        if (Number.isNaN(wLon) || Number.isNaN(wLat)) return;
+
+        const spMeta = iucnSpecies.find(
+          (s) =>
+            s.common_name.toLowerCase() === String(occ.species).toLowerCase(),
+        );
+        const statusCode = spMeta?.red_list_status || "CR";
+        const statusColor =
+          statusCode === "CR"
+            ? "#dc2626"
+            : statusCode === "VU"
+              ? "#d97706"
+              : "#15803d";
+        const artUrl = getWildlifeArtUrl(spMeta?.id || occ.species);
+
+        const pinWrap = document.createElement("div");
+        pinWrap.style.cursor = "pointer";
+        pinWrap.style.userSelect = "none";
+        pinWrap.style.zIndex = "3";
+        pinWrap.title = `${occ.species} (${occ.scientific_name}) — ${occ.locality}. Klik untuk buka Buku Panduan Satwa`;
+
+        pinWrap.innerHTML = `
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); transition: transform 0.15s ease;">
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #faf6ee; border: 2.5px solid #15803d; padding: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <img src="${artUrl}" alt="${occ.species}" style="width: 100%; height: 100%; object-fit: contain;" />
+            </div>
+            <span style="position: absolute; -top: 4px; -right: 5px; background: ${statusColor}; color: #fff; font-family: ui-monospace, monospace; font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 999px; border: 1.5px solid #faf6ee; line-height: 1;">
+              ${statusCode}
+            </span>
+            <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #15803d; margin-top: -1px;"></div>
+          </div>
+        `;
+
+        pinWrap.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          handleSelectWildlifePin(occ);
+        });
+
+        const wMarker = new maplibregl.Marker({
+          element: pinWrap,
+          anchor: "bottom",
+        })
+          .setLngLat([wLon, wLat])
+          .addTo(mapRef.current);
+
+        markers.push(wMarker);
+      });
+
       INDONESIA_WILDLIFE_HABITATS.forEach((hab) => {
         const habWrapper = document.createElement("div");
         habWrapper.style.cursor = "pointer";
@@ -1380,7 +1546,14 @@ export default function MapPage() {
     return () => {
       markers.forEach((m) => m.remove());
     };
-  }, [phaseFireEvents, mapReady, layers.hotspots, layers.protected]);
+  }, [
+    phaseFireEvents,
+    gbifOccurrences,
+    iucnSpecies,
+    mapReady,
+    layers.hotspots,
+    layers.protected,
+  ]);
 
   // Ganti mode basemap (EO Optical vs SAR Radar) & Swap Citra Satelit Historis (2014) vs Sekarang (Terbakar) tanpa lag
   useEffect(() => {
@@ -1948,10 +2121,18 @@ export default function MapPage() {
             </span>
             <div className="pr-1">
               <div className="font-mono text-[8.5px] font-bold tracking-[0.15em] text-[#1b5e3a] uppercase">
-                {selectedFeature ? "Field Dossier" : "Field Notes"}
+                {selectedWildlife
+                  ? "Panduan Satwa"
+                  : selectedFeature
+                    ? "Field Dossier"
+                    : "Field Notes"}
               </div>
               <div className="text-xs font-extrabold text-[#1a221d] group-hover:text-[#983226]">
-                {selectedFeature ? selectedFeature.title : "Buka Catatan"}
+                {selectedWildlife
+                  ? selectedWildlife.commonName
+                  : selectedFeature
+                    ? selectedFeature.title
+                    : "Buka Catatan"}
               </div>
             </div>
           </button>
@@ -1989,19 +2170,25 @@ export default function MapPage() {
                 <div className="flex items-start justify-between gap-2 border-b-2 border-[#983226]/25 pb-2">
                   <div className="min-w-0">
                     <div className="font-mono text-[8.5px] font-bold tracking-[0.18em] text-[#1b5e3a] uppercase">
-                      {selectedFeature
-                        ? "Field Dossier · SAR"
-                        : "Field Notes · Nusantara"}
+                      {selectedWildlife
+                        ? `Field Guide · IUCN ${selectedWildlife.status}`
+                        : selectedFeature
+                          ? "Field Dossier · SAR"
+                          : "Field Notes · Nusantara"}
                     </div>
                     <h2 className="mt-0.5 truncate font-display text-[15px] font-extrabold tracking-tight text-[#1a221d]">
-                      {selectedFeature
-                        ? selectedFeature.title
-                        : "Catatan Ekosistem"}
+                      {selectedWildlife
+                        ? selectedWildlife.commonName
+                        : selectedFeature
+                          ? selectedFeature.title
+                          : "Catatan Ekosistem"}
                     </h2>
                     <p className="truncate text-[10.5px] font-medium text-[#5c665f]">
-                      {selectedFeature
-                        ? selectedFeature.subtitle
-                        : "Pilih titik api atau buka bookmark"}
+                      {selectedWildlife
+                        ? `${selectedWildlife.scientificName} · ${selectedWildlife.province}`
+                        : selectedFeature
+                          ? selectedFeature.subtitle
+                          : "Pilih titik api atau ikon satwa"}
                     </p>
                   </div>
 
@@ -2016,7 +2203,218 @@ export default function MapPage() {
                 </div>
 
                 <div className="mt-2.5">
-                  {selectedFeature ? (
+                  {selectedWildlife ? (
+                    <>
+                      {/* Meta Strip + Back to Regional */}
+                      <div className="mb-2.5 flex items-center justify-between gap-2">
+                        <span className="font-mono text-[9px] font-semibold text-[#646e67]">
+                          {selectedWildlife.coordsText} ·{" "}
+                          {selectedWildlife.eventDate}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWildlife(null);
+                            setActiveWildlifeTab("profil");
+                          }}
+                          className="cursor-pointer rounded border border-[#cfc3aa] bg-[#f2ebdc] px-1.5 py-0.5 font-mono text-[9px] font-bold text-[#3d4741] hover:bg-[#e7decb]"
+                        >
+                          ← Wilayah
+                        </button>
+                      </div>
+
+                      {/* WILDLIFE TAB 1: PROFIL SATWA */}
+                      {activeWildlifeTab === "profil" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-3 rounded-lg border border-[#d6cbb5] bg-white/80 p-2.5">
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border-2 border-[#15803d]/40 bg-[#f4efe3] p-1.5 shadow-xs">
+                              <img
+                                src={selectedWildlife.artUrl}
+                                alt={selectedWildlife.commonName}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-1">
+                                <span
+                                  className={`rounded px-1.5 py-0.5 font-mono text-[8.5px] font-extrabold text-white ${
+                                    selectedWildlife.status === "CR"
+                                      ? "bg-[#b91c1c]"
+                                      : selectedWildlife.status === "VU"
+                                        ? "bg-[#d97706]"
+                                        : "bg-[#15803d]"
+                                  }`}
+                                >
+                                  {selectedWildlife.status} ·{" "}
+                                  {selectedWildlife.category}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-[11px] font-bold text-[#1a221d]">
+                                {selectedWildlife.storyRole}
+                              </div>
+                              <div className="font-mono text-[9px] text-[#5c665f]">
+                                Tren Populasi:{" "}
+                                <span className="font-bold uppercase text-[#983226]">
+                                  {selectedWildlife.populationTrend}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                              <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
+                                Lokasi Temuan (GBIF)
+                              </div>
+                              <div className="mt-0.5 text-[10.5px] font-bold text-[#1a221d] leading-snug">
+                                {selectedWildlife.locality}
+                              </div>
+                              <div className="mt-0.5 font-mono text-[8.5px] text-[#5c665f]">
+                                {selectedWildlife.dataset}
+                              </div>
+                            </div>
+
+                            <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                              <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
+                                Jarak ke Api Terdekat
+                              </div>
+                              <div className="mt-0.5 font-mono text-sm font-extrabold text-[#b91c1c]">
+                                {selectedWildlife.nearestFireKm !== null
+                                  ? `±${selectedWildlife.nearestFireKm} km`
+                                  : "Pantauan Aman"}
+                              </div>
+                              <div className="truncate font-mono text-[8.5px] text-[#5c665f]">
+                                {selectedWildlife.nearestFireLocation ||
+                                  "Belum ada hotspot aktif"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* WILDLIFE TAB 2: HABITAT ASLI */}
+                      {activeWildlifeTab === "habitat" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#15803d] uppercase">
+                              Habitat Asli &amp; Ekosistem
+                            </span>
+                            <span className="rounded bg-[#dcfce7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#15803d]">
+                              {selectedWildlife.province}
+                            </span>
+                          </div>
+                          <div className="font-display text-[13px] font-bold text-[#1a221d]">
+                            <Stabilo color="green">
+                              {selectedWildlife.habitat}
+                            </Stabilo>
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            {selectedWildlife.description}
+                          </p>
+                          {selectedWildlife.nearestNdvi && (
+                            <div className="rounded-md border border-[#d6cbb5] bg-white/80 p-2 text-[10px] text-[#2f3933]">
+                              <div className="font-mono text-[8.5px] font-bold text-[#15803d] uppercase">
+                                Kondisi Kanopi (ML NDVI ·{" "}
+                                {selectedWildlife.nearestNdvi.distanceKm} km)
+                              </div>
+                              <div className="mt-0.5 font-semibold text-[#1a221d]">
+                                {selectedWildlife.nearestNdvi.location_name}:{" "}
+                                <span className="font-mono font-bold text-[#15803d]">
+                                  {selectedWildlife.nearestNdvi.ndvi_before}
+                                </span>{" "}
+                                →{" "}
+                                <span className="font-mono font-bold text-[#b91c1c]">
+                                  {selectedWildlife.nearestNdvi.ndvi_after}
+                                </span>{" "}
+                                <span className="font-mono text-[9px] text-[#5c665f]">
+                                  (Δ {selectedWildlife.nearestNdvi.delta})
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* WILDLIFE TAB 3: ANCAMAN & KEBAKARAN */}
+                      {activeWildlifeTab === "ancaman" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#983226] uppercase">
+                              Ancaman Utama Spesies
+                            </span>
+                            <span className="rounded bg-[#fee2e2] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#983226]">
+                              {selectedWildlife.threats.length} Faktor Risiko
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedWildlife.threats.map((threat) => (
+                              <span
+                                key={threat}
+                                className="rounded-md border border-[#fca5a5] bg-[#fef2f2] px-2 py-0.5 font-mono text-[9.5px] font-bold capitalize text-[#991b1b]"
+                              >
+                                ⚠ {threat}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            <Stabilo color="pink">
+                              Kebakaran gambut dan fragmentasi koridor
+                            </Stabilo>{" "}
+                            memutus jalur jelajah alami, menghilangkan pohon
+                            sarang &amp; sumber pakan, serta memaksa{" "}
+                            <Stabilo color="yellow">
+                              {selectedWildlife.commonName}
+                            </Stabilo>{" "}
+                            keluar menuju area konflik manusia-satwa.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* WILDLIFE TAB 4: PROTEKSI & PERAN RADAR SAR */}
+                      {activeWildlifeTab === "aksi" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
+                            <span className="font-mono text-[10px] font-bold tracking-wider text-[#0369a1] uppercase">
+                              Peran Radar SAR &amp; Konservasi
+                            </span>
+                            <span className="rounded bg-[#e0f2fe] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#0369a1]">
+                              NISAR L-Band
+                            </span>
+                          </div>
+                          <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
+                            Gelombang{" "}
+                            <Stabilo color="blue">
+                              NISAR L-Band (24 cm) &amp; Sentinel-1
+                            </Stabilo>{" "}
+                            menembus kabut asap untuk memetakan{" "}
+                            <Stabilo color="yellow">
+                              pengeringan gambut &amp; batas luka bakar
+                            </Stabilo>{" "}
+                            di sekitar koridor satwa sebelum api membesar.
+                          </p>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                              <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
+                                Catatan GBIF
+                              </div>
+                              <div className="mt-0.5 font-mono text-xs font-extrabold text-[#15803d]">
+                                {selectedWildlife.occurrencesCount.toLocaleString()}{" "}
+                                rekaman
+                              </div>
+                            </div>
+                            <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
+                              <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
+                                Asesmen IUCN
+                              </div>
+                              <div className="mt-0.5 font-mono text-xs font-extrabold text-[#1a221d]">
+                                Tahun {selectedWildlife.lastAssessed}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : selectedFeature ? (
                     <>
                       {/* Meta Strip + Back to Regional */}
                       <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -2436,8 +2834,53 @@ export default function MapPage() {
               </div>
             </div>
 
-            {/* Side Index Bookmark Tabs (Pop out when selectedFeature is active) */}
-            {selectedFeature && (
+            {/* Side Index Bookmark Tabs (Pop out when selectedFeature or selectedWildlife is active) */}
+            {selectedWildlife ? (
+              <div className="pointer-events-auto mt-3 -ml-0.5 flex flex-col gap-1.5">
+                {[
+                  {
+                    id: "profil",
+                    label: "Profil",
+                    color: "bg-[#15803d] text-white",
+                    idle: "bg-[#dcfce7] text-[#14532d]",
+                  },
+                  {
+                    id: "habitat",
+                    label: "Habitat",
+                    color: "bg-[#047857] text-white",
+                    idle: "bg-[#d1fae5] text-[#065f46]",
+                  },
+                  {
+                    id: "ancaman",
+                    label: "Ancaman",
+                    color: "bg-[#983226] text-white",
+                    idle: "bg-[#fee2e2] text-[#7f1d1d]",
+                  },
+                  {
+                    id: "aksi",
+                    label: "SAR Aksi",
+                    color: "bg-[#0369a1] text-white",
+                    idle: "bg-[#dbeafe] text-[#1e3a8a]",
+                  },
+                ].map((bm) => {
+                  const isActive = activeWildlifeTab === bm.id;
+                  return (
+                    <button
+                      key={bm.id}
+                      type="button"
+                      onClick={() => setActiveWildlifeTab(bm.id)}
+                      className={`cursor-pointer whitespace-nowrap rounded-r-lg border border-l-0 border-black/15 py-1.5 text-left font-mono text-[9.5px] font-bold shadow-md transition-all ${
+                        isActive
+                          ? `${bm.color} w-26 pl-2.5 pr-2 translate-x-0.5`
+                          : `${bm.idle} w-22 pl-2 pr-1.5 opacity-90 hover:w-25 hover:opacity-100`
+                      }`}
+                    >
+                      {bm.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : selectedFeature && (
               <div className="pointer-events-auto mt-3 -ml-0.5 flex flex-col gap-1.5">
                 {[
                   {
