@@ -87,6 +87,119 @@ function getWildlifeArtUrl(speciesIdOrName = "") {
   return WILDLIFE_ART_MAP[key] || "/assets/art/orangutan.svg";
 }
 
+const WILDLIFE_PHOTO_MAP = {
+  "bornean-orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "bornean orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "sunda-pangolin":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Pangolin_borneo.jpg?width=480",
+  "sunda pangolin":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Pangolin_borneo.jpg?width=480",
+  "sun-bear":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Sun_Bear.jpg?width=480",
+  "sun bear":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Sun_Bear.jpg?width=480",
+  "mouse-deer":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Adult_Lesser_mouse-deer_(Tragulus_kanchil),_Singapore_-_20141001.jpg?width=480",
+  "lesser mouse deer":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Adult_Lesser_mouse-deer_(Tragulus_kanchil),_Singapore_-_20141001.jpg?width=480",
+  "helmeted-hornbill":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+  "helmeted hornbill":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+  "sumatran tiger":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Panthera_tigris_sumatrae.jpg?width=480",
+  "sumatran elephant":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Elephant_Sumatra_ProfilG.jpg?width=480",
+  "sumatran orangutan":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Bornean_orangutan_(Pongo_pygmaeus),_Tanjung_Putting_National_Park_05.jpg?width=480",
+  "javan hawk-eagle":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Nisaetus_bartelsi_(Elang_Jawa).jpg?width=480",
+  "javan leopard":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Panthera_pardus_melas_(Tierpark_Berlin)_-_1009-891-(118).jpg?width=480",
+  "komodo dragon":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Varanus_komodoensis.JPG?width=480",
+  "yellow-crested cockatoo":
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Helmeted_Hornbill.jpg?width=480",
+};
+
+const WILDLIFE_SPECIES_PROFILES = {
+  "sumatran tiger": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Apex Predator of Sumatran Peatlands",
+    habitat:
+      "Lowland tropical rainforest, peat swamp forests, and montane forest corridors in Sumatra",
+    description:
+      "Fewer than 400 Sumatran tigers remain in the wild. Peatland fires and forest clearing fragment their large territories, pushing tigers closer to plantation edges.",
+    threats: [
+      "peatland fires",
+      "habitat fragmentation",
+      "snare poaching",
+      "human-wildlife conflict",
+    ],
+  },
+  "sumatran elephant": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Keystone Seed Disperser",
+    habitat:
+      "Lowland broadleaf forests, peat swamps, and savanna fringes across Sumatra",
+    description:
+      "Sumatran elephants migrate along ancient riverine and peat corridors. Fires destroy forage plants and force herds into agricultural zones.",
+    threats: [
+      "habitat loss",
+      "fire & smoke haze",
+      "corridor blocking",
+      "human-elephant conflict",
+    ],
+  },
+  "javan hawk-eagle": {
+    red_list_status: "EN",
+    red_list_category: "Endangered",
+    population_trend: "decreasing",
+    story_role: "Canopy Raptor of Java (Garuda)",
+    habitat:
+      "Montane and sub-montane tropical forests on volcanic slopes across Java",
+    description:
+      "Endemic to Java and the inspiration for Indonesia's national emblem. Dry-season highland fires destroy tall emergent nesting trees.",
+    threats: [
+      "montane forest fire",
+      "habitat fragmentation",
+      "illegal wildlife trade",
+    ],
+  },
+  "javan leopard": {
+    red_list_status: "CR",
+    red_list_category: "Critically Endangered",
+    population_trend: "decreasing",
+    story_role: "Last Big Cat of Java",
+    habitat:
+      "Dense montane rainforests, teak-forest buffers, and volcanic reserves in Java",
+    description:
+      "The sole remaining large carnivore on Java. Wildfire and drought shrink prey density and isolate small populations across fragmented mountain parks.",
+    threats: ["forest fires", "habitat loss", "prey depletion", "poaching"],
+  },
+  "komodo dragon": {
+    red_list_status: "EN",
+    red_list_category: "Endangered",
+    population_trend: "stable",
+    story_role: "Apex Savanna Reptile",
+    habitat: "Dry tropical savanna, monsoon forests, and coastal scrublands",
+    description:
+      "Savanna grass fires during dry monsoon peaks reduce deer prey availability and scorch ground-nesting burrows.",
+    threats: ["savanna wildfires", "prey decline", "climate warming"],
+  },
+};
+
+function getWildlifePhotoUrl(speciesIdOrName = "") {
+  const key = String(speciesIdOrName).toLowerCase().trim();
+  return WILDLIFE_PHOTO_MAP[key] || getWildlifeArtUrl(speciesIdOrName);
+}
+
 // 2 Fase Perbandingan Lahan: Historis Sebelum Kebakaran (Arsip Satelit 2014) vs Sekarang Ketika Terbakar
 const SAR_TIMELINE_PHASES = [
   {
@@ -807,6 +920,75 @@ export default function MapPage() {
     [],
   );
 
+  // Pin satwa hanya muncul di sekitar titik kebakaran aktif (seluruh Indonesia: Sumatra, Jawa, Kalimantan, dll.)
+  const fireTriggeredWildlifePins = useMemo(() => {
+    if (!phaseFireEvents || phaseFireEvents.length === 0) return [];
+    const toRad = (d) => (d * Math.PI) / 180;
+    const distKm = (lat1, lon1, lat2, lon2) => {
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) ** 2;
+      return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+    };
+
+    // 1. Ambil observasi GBIF nyata yang berada di dekat kebakaran aktif (<= 140 km)
+    const pins = [];
+    gbifOccurrences.forEach((occ) => {
+      const oLat = Number(occ.latitude);
+      const oLon = Number(occ.longitude);
+      if (Number.isNaN(oLat) || Number.isNaN(oLon)) return;
+      const nearFire = phaseFireEvents.some((f) => {
+        const fLat = Number(f.latitude);
+        const fLon = Number(f.longitude);
+        return !Number.isNaN(fLat) && !Number.isNaN(fLon) && distKm(oLat, oLon, fLat, fLon) <= 140;
+      });
+      if (nearFire) {
+        pins.push(occ);
+      }
+    });
+
+    // 2. Untuk wilayah lain di Indonesia (Sumatra, Jawa, Nusa Tenggara, Sulawesi, Papua) yang ada kebakaran aktif,
+    //    tampilkan satwa endemik koridor terdekat secara otomatis per klaster (~110 km)
+    const seenCells = new Set();
+    phaseFireEvents.forEach((f, idx) => {
+      const fLat = Number(f.latitude);
+      const fLon = Number(f.longitude);
+      if (Number.isNaN(fLat) || Number.isNaN(fLon)) return;
+      const cellKey = `${Math.round(fLat * 0.9)}:${Math.round(fLon * 0.9)}`;
+      if (seenCells.has(cellKey)) return;
+      seenCells.add(cellKey);
+
+      const alreadyHasPin = pins.some(
+        (p) => distKm(Number(p.latitude), Number(p.longitude), fLat, fLon) <= 95,
+      );
+      if (alreadyHasPin) return;
+
+      const scope = resolveIndonesiaWildlifeScope(fLat, fLon);
+      const primary = scope?.speciesList?.[0];
+      if (!primary) return;
+
+      pins.push({
+        id: `auto-wildlife-${idx}-${cellKey}`,
+        species: primary.name,
+        scientific_name: primary.sci || "",
+        latitude: Number((fLat + 0.11).toFixed(4)),
+        longitude: Number((fLon + 0.11).toFixed(4)),
+        year: 2026,
+        event_date: f.acq_date || "LIVE",
+        province: f.provinsi || scope.island || "Indonesia",
+        locality: scope.corridorName || f.kabupaten || "Wildfire Corridor",
+        dataset: "IUCN / H.O.M.E. Corridor Match",
+        statusOverride: primary.status,
+      });
+    });
+
+    return pins;
+  }, [phaseFireEvents, gbifOccurrences]);
+
   // Gunakan filteredFireEvents agar poligon zona lahan tetap tampil di kedua fase (hijau utuh -> luka bakar)
   const fullDistrictWatchlist = useMemo(
     () => buildKarhutlaDistrictWatchlist(filteredFireEvents),
@@ -898,13 +1080,15 @@ export default function MapPage() {
   const handleSelectWildlifePin = (occ) => {
     const lon = Number(occ.longitude);
     const lat = Number(occ.latitude);
+    const fallbackProfile =
+      WILDLIFE_SPECIES_PROFILES[String(occ.species).toLowerCase().trim()] || {};
     const matchedSpecies =
       iucnSpecies.find(
         (sp) =>
           sp.common_name.toLowerCase() === String(occ.species).toLowerCase() ||
           sp.scientific_name.toLowerCase() ===
             String(occ.scientific_name).toLowerCase(),
-      ) || {};
+      ) || fallbackProfile;
 
     let nearestFireKm = null;
     let nearestFireLocation = null;
@@ -940,7 +1124,7 @@ export default function MapPage() {
       commonName: matchedSpecies.common_name || occ.species,
       scientificName:
         matchedSpecies.scientific_name || occ.scientific_name || "",
-      status: matchedSpecies.red_list_status || "CR",
+      status: occ.statusOverride || matchedSpecies.red_list_status || "CR",
       category: matchedSpecies.red_list_category || "Critically Endangered",
       populationTrend: matchedSpecies.population_trend || "decreasing",
       storyRole: matchedSpecies.story_role || "Endemic Rainforest Species",
@@ -954,6 +1138,7 @@ export default function MapPage() {
       occurrencesCount: matchedSpecies.occurrences_count || 0,
       lastAssessed: matchedSpecies.last_assessed || "2024",
       artUrl: getWildlifeArtUrl(matchedSpecies.id || occ.species),
+      photoUrl: getWildlifePhotoUrl(matchedSpecies.id || occ.species),
       province: occ.province || "Kalimantan",
       locality: occ.locality || "Protected Corridor",
       eventDate: occ.event_date || String(occ.year || "2024"),
@@ -1486,9 +1671,9 @@ export default function MapPage() {
       markers.push(marker);
     });
 
-    // Pin Satwa Endemik Bergambar (dari GBIF + IUCN) & Badge Koridor Habitat
+    // Pin Satwa Endemik Bergambar (hanya muncul di sekitar kebakaran aktif di seluruh Indonesia)
     if (layers.protected) {
-      gbifOccurrences.forEach((occ) => {
+      fireTriggeredWildlifePins.forEach((occ) => {
         const wLon = Number(occ.longitude);
         const wLat = Number(occ.latitude);
         if (Number.isNaN(wLon) || Number.isNaN(wLat)) return;
@@ -1497,25 +1682,32 @@ export default function MapPage() {
           (s) =>
             s.common_name.toLowerCase() === String(occ.species).toLowerCase(),
         );
-        const statusCode = spMeta?.red_list_status || "CR";
+        const fallbackMeta =
+          WILDLIFE_SPECIES_PROFILES[String(occ.species).toLowerCase().trim()];
+        const statusCode =
+          occ.statusOverride ||
+          spMeta?.red_list_status ||
+          fallbackMeta?.red_list_status ||
+          "CR";
         const statusColor =
           statusCode === "CR"
             ? "#dc2626"
             : statusCode === "VU"
               ? "#d97706"
               : "#15803d";
+        const photoUrl = getWildlifePhotoUrl(spMeta?.id || occ.species);
         const artUrl = getWildlifeArtUrl(spMeta?.id || occ.species);
 
         const pinWrap = document.createElement("div");
         pinWrap.style.cursor = "pointer";
         pinWrap.style.userSelect = "none";
         pinWrap.style.zIndex = "3";
-        pinWrap.title = `${occ.species} (${occ.scientific_name}) — ${occ.locality}. Klik untuk buka Buku Panduan Satwa`;
+        pinWrap.title = `${occ.species} (${occ.scientific_name}) — ${occ.locality}`;
 
         pinWrap.innerHTML = `
           <div style="position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); transition: transform 0.15s ease;">
-            <div style="width: 36px; height: 36px; border-radius: 999px; background: #faf6ee; border: 2.5px solid #15803d; padding: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-              <img src="${artUrl}" alt="${occ.species}" style="width: 100%; height: 100%; object-fit: contain;" />
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #faf6ee; border: 2.5px solid #15803d; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <img src="${photoUrl}" alt="${occ.species}" onerror="this.onerror=null;this.src='${artUrl}';" style="width: 100%; height: 100%; object-fit: cover;" />
             </div>
             <span style="position: absolute; -top: 4px; -right: 5px; background: ${statusColor}; color: #fff; font-family: ui-monospace, monospace; font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 999px; border: 1.5px solid #faf6ee; line-height: 1;">
               ${statusCode}
@@ -1577,7 +1769,7 @@ export default function MapPage() {
     };
   }, [
     phaseFireEvents,
-    gbifOccurrences,
+    fireTriggeredWildlifePins,
     iucnSpecies,
     mapReady,
     layers.hotspots,
@@ -2269,11 +2461,15 @@ export default function MapPage() {
                       {activeWildlifeTab === "profil" && (
                         <div className="space-y-2.5">
                           <div className="flex items-center gap-3 rounded-lg border border-[#d6cbb5] bg-white/80 p-2.5">
-                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border-2 border-[#15803d]/40 bg-[#f4efe3] p-1.5 shadow-xs">
+                            <div className="h-18 w-18 shrink-0 overflow-hidden rounded-xl border-2 border-[#15803d]/50 bg-[#f4efe3] shadow-xs">
                               <img
-                                src={selectedWildlife.artUrl}
+                                src={selectedWildlife.photoUrl || selectedWildlife.artUrl}
                                 alt={selectedWildlife.commonName}
-                                className="h-full w-full object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = selectedWildlife.artUrl;
+                                }}
+                                className="h-full w-full object-cover"
                               />
                             </div>
                             <div className="min-w-0 flex-1">
