@@ -17,6 +17,56 @@ import {
   resolveIndonesiaWildlifeScope,
   buildIndonesiaWildlifeHabitatsGeoJSON,
 } from "../nasaScraper";
+import ndviSamplesData from "../../ml/ndvi_samples.json";
+
+function findNearestNdviPlot(lat, lon, plots) {
+  if (!Array.isArray(plots) || plots.length === 0) return null;
+  let best = null;
+  let bestDist = Infinity;
+  const toRad = (d) => (d * Math.PI) / 180;
+  for (const p of plots) {
+    const dLat = toRad(p.lat - lat);
+    const dLon = toRad(p.lon - lon);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat)) * Math.cos(toRad(p.lat)) * Math.sin(dLon / 2) ** 2;
+    const km = 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+    if (km < bestDist) {
+      bestDist = km;
+      best = {
+        ...p,
+        delta:
+          typeof p.delta === "number"
+            ? p.delta
+            : Number((p.ndvi_after - p.ndvi_before).toFixed(2)),
+        distanceKm: Math.round(km),
+      };
+    }
+  }
+  return best;
+}
+
+function prewarmWaybackTiles(lat, lon, z = 10) {
+  if (typeof Image === "undefined") return;
+  const n = 2 ** z;
+  const xCenter = Math.floor(((lon + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const yCenter = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
+      n,
+  );
+  for (let dx = -1; dx <= 1; dx += 1) {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      const x = xCenter + dx;
+      const y = yCenter + dy;
+      if (x >= 0 && x < n && y >= 0 && y < n) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = `https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/10/${z}/${y}/${x}`;
+      }
+    }
+  }
+}
 
 // 2 Fase Perbandingan Lahan: Historis Sebelum Kebakaran (Arsip Satelit 2014) vs Sekarang Ketika Terbakar
 const SAR_TIMELINE_PHASES = [
@@ -349,7 +399,7 @@ function buildNasaBasemapStyle() {
           "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/10/{z}/{y}/{x}",
         ],
         tileSize: 256,
-        maxzoom: 18,
+        maxzoom: 14,
         attribution: "Esri World Imagery Wayback (2014-02-20 Archive)",
       },
       "boundaries-places": {
@@ -399,7 +449,8 @@ function buildNasaBasemapStyle() {
         source: "historical-satellite-tiles",
         layout: { visibility: "none" },
         paint: {
-          "raster-opacity": 0.98,
+          "raster-opacity": 0,
+          "raster-opacity-transition": { duration: 280 },
           "raster-contrast": 0.08,
           "raster-saturation": 0.12,
         },
@@ -469,6 +520,20 @@ export default function MapPage() {
   const { protectedAreas } = useProtectedAreas();
   const [sarSwathsGeoJSON, setSarSwathsGeoJSON] = useState(SAR_SWATH_GEOJSON);
   const [scrapingNasa, setScrapingNasa] = useState(false);
+  const [mlScores, setMlScores] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/data-source/ml-scores.json")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (active && json) setMlScores(json);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const [meteomaticsData, setMeteomaticsData] = useState({
     source: "METEOMATICS LIVE API",
     account: "hackathon_nasa_space_apps_wulanndari_dwi",
@@ -828,11 +893,20 @@ export default function MapPage() {
       })
       .join("");
 
+    const ndviPlots = mlScores?.ndvi?.plots || ndviSamplesData?.plots || [];
+    const nearestNdvi = findNearestNdviPlot(lat, lon, ndviPlots);
+    const mlStats = {
+      frpOobAccuracy: mlScores?.random_forest_frp?.oob?.accuracy ?? 0.812,
+      habitatTrees: mlScores?.random_forest_habitat?.n_trees ?? 48,
+    };
+
     setActiveBookmark("cover");
     setNotebookOpen(true);
     setPlayerOpen(true);
     setSarPhase(1);
     setIsPlayingPhase(false);
+    prewarmWaybackTiles(lat, lon, 10);
+    prewarmWaybackTiles(lat, lon, 11);
     setSelectedFeature({
       title: hotspot.kabupaten || "Wildfire Hotspot",
       distanceTag: distKmText ? distKmText.replace(" • ", "") : "",
@@ -855,6 +929,8 @@ export default function MapPage() {
       windCompass: meteomaticsData.windCompass,
       wildlifeScope,
       impactChain,
+      nearestNdvi,
+      mlStats,
     });
 
     if (mapRef.current) {
@@ -1306,27 +1382,33 @@ export default function MapPage() {
     };
   }, [phaseFireEvents, mapReady, layers.hotspots, layers.protected]);
 
-  // Ganti mode basemap (EO Optical vs SAR Radar) & Swap Citra Satelit Historis (2014) vs Sekarang (Terbakar)
+  // Ganti mode basemap (EO Optical vs SAR Radar) & Swap Citra Satelit Historis (2014) vs Sekarang (Terbakar) tanpa lag
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
 
-    const showHistorical = basemapMode === "satellite" && sarPhase === 0;
-    const showCurrentSat = basemapMode === "satellite" && sarPhase !== 0;
+    const isSatMode = basemapMode === "satellite";
+    const showHistorical = isSatMode && sarPhase === 0;
     const showDarkRadar = basemapMode === "sar-dark";
 
+    // Saat pembanding aktif di mode EO, biarkan kedua layer visible agar tile 2014 ter-cache di GPU; cukup ubah raster-opacity
     if (map.getLayer("raster-satellite-historical")) {
       map.setLayoutProperty(
         "raster-satellite-historical",
         "visibility",
-        showHistorical ? "visible" : "none",
+        isSatMode && (playerOpen || showHistorical) ? "visible" : "none",
+      );
+      map.setPaintProperty(
+        "raster-satellite-historical",
+        "raster-opacity",
+        showHistorical ? 0.98 : 0,
       );
     }
     if (map.getLayer("raster-satellite")) {
       map.setLayoutProperty(
         "raster-satellite",
         "visibility",
-        showCurrentSat ? "visible" : "none",
+        isSatMode ? "visible" : "none",
       );
     }
     if (map.getLayer("raster-dark-radar")) {
@@ -1378,7 +1460,7 @@ export default function MapPage() {
         basemapMode === "sar-dark" ? 0.16 : 0.08,
       );
     }
-  }, [basemapMode, sarPhase, sarBand, activePhaseConfig, mapLoaded]);
+  }, [basemapMode, sarPhase, sarBand, activePhaseConfig, playerOpen, mapLoaded]);
 
   // Update sumber data titik api & poligon zona berapi
   useEffect(() => {
@@ -2015,6 +2097,30 @@ export default function MapPage() {
                             ))}
                           </div>
 
+                          {selectedFeature.nearestNdvi && (
+                            <div className="rounded-md border border-[#d6cbb5] bg-[#faf6ee] px-2.5 py-2 text-[10px] text-[#2f3933]">
+                              <div className="flex items-center justify-between font-mono text-[8.5px] font-bold text-[#15803d] uppercase">
+                                <span>ML NDVI Plot ({selectedFeature.nearestNdvi.distanceKm} km)</span>
+                                <span>
+                                  RF OOB {(selectedFeature.mlStats?.frpOobAccuracy * 100).toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="mt-0.5 font-semibold text-[#1a221d]">
+                                {selectedFeature.nearestNdvi.location_name}:{" "}
+                                <span className="font-mono font-bold text-[#15803d]">
+                                  {selectedFeature.nearestNdvi.ndvi_before}
+                                </span>{" "}
+                                →{" "}
+                                <span className="font-mono font-bold text-[#b91c1c]">
+                                  {selectedFeature.nearestNdvi.ndvi_after}
+                                </span>{" "}
+                                <span className="font-mono text-[9px] text-[#5c665f]">
+                                  (Δ {selectedFeature.nearestNdvi.delta})
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="rounded-md border border-dashed border-[#c7bba2] bg-[#f4eee1] px-2.5 py-2 text-[10.5px] text-[#434d46]">
                             Pilih{" "}
                             <Stabilo color="yellow">
@@ -2082,6 +2188,12 @@ export default function MapPage() {
                           <div className="rounded-md border border-[#e0d6c1] bg-white/70 px-2.5 py-1.5 font-mono text-[9.5px] text-[#4a554e]">
                             Sensor: {selectedFeature.sensor} · FRP{" "}
                             {selectedFeature.frpVal} MW
+                            {selectedFeature.nearestNdvi
+                              ? ` · ΔNDVI ${selectedFeature.nearestNdvi.delta} (${selectedFeature.nearestNdvi.location_name})`
+                              : ""}
+                          </div>
+                          <div className="font-mono text-[8.5px] text-[#646e67]">
+                            Ref: NASA Earthdata, ASF Vertex, NISAR Guide, ARSET &amp; ml/pipeline.py
                           </div>
                         </div>
                       )}
@@ -2511,9 +2623,18 @@ export default function MapPage() {
                 <span className="min-w-0 flex-1 leading-snug">
                   {activePhaseConfig.desc}
                 </span>
-                <span className="shrink-0 rounded-md border border-[#d6cbb5] bg-[#faf6ee] px-2 py-0.5 font-mono text-[9px] font-bold text-[#1b5e3a]">
-                  {activePhaseConfig.badge}
-                </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {selectedFeature?.nearestNdvi && (
+                    <span className="rounded-md border border-[#d6cbb5] bg-[#faf6ee] px-2 py-0.5 font-mono text-[9px] font-bold text-[#0f172a]">
+                      {sarPhase === 0
+                        ? `NDVI ${selectedFeature.nearestNdvi.ndvi_before}`
+                        : `NDVI ${selectedFeature.nearestNdvi.ndvi_after} (Δ ${selectedFeature.nearestNdvi.delta})`}
+                    </span>
+                  )}
+                  <span className="rounded-md border border-[#d6cbb5] bg-[#faf6ee] px-2 py-0.5 font-mono text-[9px] font-bold text-[#1b5e3a]">
+                    {activePhaseConfig.badge}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
