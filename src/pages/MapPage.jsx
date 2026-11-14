@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useFireData, useProtectedAreas } from "../hooks";
-import { DonationDisclaimer, StatusBadge } from "../components";
+import { DonationDisclaimer } from "../components";
+import { useTranslation } from "../i18n";
 import {
   scrapeNasaSarSwaths,
   scrapeNasaEonetWildfires,
@@ -91,7 +92,9 @@ const SAR_TIMELINE_PHASES = [
   {
     id: 0,
     short: "Sebelum Kebakaran (2014)",
+    shortEn: "Before Fire (2014)",
     title: "Sebelum Kebakaran · Arsip 2014",
+    titleEn: "Before Fire · 2014 Archive",
     badge: "Volume Scattering • ~ -6.2 dB",
     color: "#16a34a",
     zoneColor: "#16a34a",
@@ -100,11 +103,15 @@ const SAR_TIMELINE_PHASES = [
     smokeOpacity: 0,
     ratio: 0,
     desc: "Citra satelit historis (Esri Wayback 2014) sebelum kebakaran: kanopi hutan utuh, gambut lembap, & koridor satwa terhubung.",
+    descEn:
+      "Historical satellite imagery (Esri Wayback 2014) prior to burning: intact forest canopy, moist peatland, & connected wildlife corridors.",
   },
   {
     id: 1,
     short: "Sekarang (Ketika Terbakar)",
+    shortEn: "Now (Active Fire)",
     title: "Sekarang · Ketika Terbakar",
+    titleEn: "Now · Active Fire & Burn Scar",
     badge: "Surface Drop • -18.5 dB",
     color: "#dc2626",
     zoneColor: "#7f1d1d",
@@ -113,6 +120,8 @@ const SAR_TIMELINE_PHASES = [
     smokeOpacity: 0.72,
     ratio: 1,
     desc: "Citra satelit terkini dengan titik api aktif, kabut asap (ditembus Radar SAR), & bekas luka bakar (burn scar) di lokasi.",
+    descEn:
+      "Current satellite imagery with active fire hotspots, smoke haze (penetrated by SAR Radar), & burn scar perimeter on site.",
   },
 ];
 
@@ -352,6 +361,9 @@ function buildImpactTranslation({
   const sarHeadline = isHighEnergy
     ? "Penipisan kanopi & anomali panas tinggi"
     : "Gangguan vegetasi aktif terdeteksi SAR";
+  const sarHeadlineEn = isHighEnergy
+    ? "Canopy thinning & high thermal anomaly"
+    : "Active vegetation disturbance detected by SAR";
 
   const sarInterpretation = isHighEnergy
     ? `Penurunan pantulan balik SAR (${sarDb} dB, Δ ${sarDrop} dB) dan energi radiatif ${frpVal} MW menandakan kanopi menipis drastis di balik kabut asap.`
@@ -364,6 +376,13 @@ function buildImpactTranslation({
     : isDrySoil
       ? "Tanah kering — rawan rambatan api"
       : "Kelembapan tanah relatif moderat";
+  const peatHeadlineEn = isPeat
+    ? isDrySoil
+      ? "Dry peatland — smoldering fire risk"
+      : "Peatland zone currently moist"
+    : isDrySoil
+      ? "Dry soil — elevated fire spread risk"
+      : "Moderate soil moisture level";
 
   const peatImpact = isPeat
     ? `Lahan gambut dengan kelembapan ${smi} rentan mengalami kebakaran bawah permukaan (smoldering) yang sulit padam serta melepas karbon tersimpan.`
@@ -372,24 +391,30 @@ function buildImpactTranslation({
       : `Kelembapan tanah moderat (SMI ${smi}) dengan indeks risiko api FWI ${fwi}, tetap memerlukan pemantauan kanal dan tepi hutan.`;
 
   const primaryCorridor =
-    wildlifeScope?.corridorName || "Koridor Hutan & Gambut Terdekat";
+    wildlifeScope?.corridorName || "Nearest Forest & Peat Corridor";
   const speciesCount = wildlifeScope?.speciesList?.length || 0;
   const wildlifeHeadline = `${speciesCount} spesies dilindungi dalam radius ${wildlifeScope?.radiusKm || 60} km`;
+  const wildlifeHeadlineEn = `${speciesCount} protected species within ${wildlifeScope?.radiusKm || 60} km radius`;
   const wildlifeImpact = `${wildlifeScope?.impactSummary || "Koridor habitat terancam fragmentasi dan paparan asap pekat."} Fokus pantauan: ${primaryCorridor}.`;
 
   const communityHeadline = `Sebaran asap mengarah ke ${windCompass}`;
+  const communityHeadlineEn = `Smoke plume drifting toward ${windCompass}`;
   const communityImpact = `Angin ${windCompass} berkecepatan ${windSpeedMs} m/s berpotensi membawa partikulat asap ke permukiman hilir dan wilayah udara sekitar.`;
 
   return {
     isPeat,
     isHighEnergy,
     sarHeadline,
+    sarHeadlineEn,
     sarInterpretation,
     peatHeadline,
+    peatHeadlineEn,
     peatImpact,
     wildlifeHeadline,
+    wildlifeHeadlineEn,
     wildlifeImpact,
     communityHeadline,
+    communityHeadlineEn,
     communityImpact,
   };
 }
@@ -499,6 +524,10 @@ function buildNasaBasemapStyle() {
 }
 
 export default function MapPage() {
+  const { locale } = useTranslation();
+  const isId = locale === "id";
+  const L = (en, id) => (isId ? id : en);
+
   const [searchParams] = useSearchParams();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -1829,7 +1858,7 @@ export default function MapPage() {
                 <div className="flex items-center justify-between gap-2 pl-2">
                   <div>
                     <div className="font-mono text-[8px] font-bold tracking-[0.22em] text-[#e5c787] uppercase">
-                      Pos Pantau · Kartografi
+                      {L("Observation Post · Cartography", "Pos Pantau · Kartografi")}
                     </div>
                     <h1 className="font-display text-[15px] font-extrabold tracking-tight text-white">
                       H.O.M.E. Field Board
@@ -1838,7 +1867,7 @@ export default function MapPage() {
 
                   <div className="flex items-center gap-1.5">
                     <span className="rounded-md border border-[#f5d0c5]/30 bg-[#983226] px-2 py-0.5 font-mono text-[9.5px] font-bold text-white shadow-xs">
-                      {phaseFireEvents.length} titik
+                      {phaseFireEvents.length} {L("pts", "titik")}
                     </span>
                     <button
                       type="button"
@@ -1867,10 +1896,10 @@ export default function MapPage() {
                   <div className="py-2.5">
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                        Wilayah Pantau
+                        {L("Monitored Region", "Wilayah Pantau")}
                       </span>
                       <span className="font-mono text-[8.5px] font-semibold text-[#1b5e3a]">
-                        Nusantara
+                        {L("Archipelago", "Nusantara")}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -1903,11 +1932,11 @@ export default function MapPage() {
                   <div className="space-y-2 py-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                        Mode Mata
+                        {L("Eye Mode", "Mode Mata")}
                       </span>
                       <div className="inline-flex rounded-lg border border-[#d6cbb5] bg-[#efe7d6] p-0.5">
                         {[
-                          { id: "satellite", label: "Optik EO" },
+                          { id: "satellite", label: L("Optical EO", "Optik EO") },
                           { id: "sar-dark", label: "Radar SAR" },
                         ].map((bm) => (
                           <button
@@ -1928,13 +1957,13 @@ export default function MapPage() {
 
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                        Rentang
+                        {L("Range", "Rentang")}
                       </span>
                       <div className="inline-flex rounded-lg border border-[#d6cbb5] bg-[#efe7d6] p-0.5">
                         {[
-                          { id: "24h", label: "24 Jam" },
-                          { id: "3d", label: "3 Hari" },
-                          { id: "7d", label: "7 Hari" },
+                          { id: "24h", label: L("24 Hr", "24 Jam") },
+                          { id: "3d", label: L("3 Days", "3 Hari") },
+                          { id: "7d", label: L("7 Days", "7 Hari") },
                         ].map((time) => (
                           <button
                             key={time.id}
@@ -1956,7 +1985,7 @@ export default function MapPage() {
                   {/* 3. Frekuensi Gelombang Radar */}
                   <div className="py-2.5">
                     <div className="mb-1.5 font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                      Frekuensi Gelombang SAR
+                      {L("SAR Waveband Frequency", "Frekuensi Gelombang SAR")}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
@@ -2009,29 +2038,37 @@ export default function MapPage() {
                       })}
                     </div>
                     <p className="mt-1.5 text-[10px] leading-snug text-[#46514a]">
-                      {SAR_BAND_MODES[sarBand].detail}
+                      {sarBand === "l-band"
+                        ? L(
+                            "Penetrates dense canopy down to peat soil & detects subsurface drying.",
+                            SAR_BAND_MODES["l-band"].detail,
+                          )
+                        : L(
+                            "Rapidly maps surface burn scars & active smoke-obscured perimeters.",
+                            SAR_BAND_MODES["c-band"].detail,
+                          )}
                     </p>
                   </div>
 
                   {/* 4. Lapisan Kartografi (Tactile Switches) */}
                   <div className="space-y-1 py-2.5">
                     <div className="mb-1 font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                      Lapisan Peta
+                      {L("Map Layers", "Lapisan Peta")}
                     </div>
                     {[
                       {
                         key: "hotspots",
-                        label: "Titik Panas & Zona Api",
+                        label: L("Hotspots & Fire Zones", "Titik Panas & Zona Api"),
                         dot: "bg-[#983226]",
                       },
                       {
                         key: "sar",
-                        label: "Sapuan Radar SAR",
+                        label: L("SAR Radar Swaths", "Sapuan Radar SAR"),
                         dot: "bg-[#0284c7]",
                       },
                       {
                         key: "protected",
-                        label: "Koridor Habitat Satwa",
+                        label: L("Wildlife Habitat Corridors", "Koridor Habitat Satwa"),
                         dot: "bg-[#15803d]",
                       },
                     ].map((item) => {
@@ -2095,7 +2132,9 @@ export default function MapPage() {
                       disabled={scrapingNasa || fireLoading}
                       className="cursor-pointer whitespace-nowrap rounded-lg border border-[#c89d54] bg-[#efe5cf] px-2.5 py-1 font-mono text-[9.5px] font-bold text-[#3d2e14] shadow-2xs transition-colors hover:bg-[#e5d6b6] disabled:opacity-50"
                     >
-                      {scrapingNasa ? "Menyinkronkan..." : "Sinkronkan Data"}
+                      {scrapingNasa
+                        ? L("Syncing...", "Menyinkronkan...")
+                        : L("Sync Data", "Sinkronkan Data")}
                     </button>
                   </div>
                 </div>
@@ -2122,7 +2161,7 @@ export default function MapPage() {
             <div className="pr-1">
               <div className="font-mono text-[8.5px] font-bold tracking-[0.15em] text-[#1b5e3a] uppercase">
                 {selectedWildlife
-                  ? "Panduan Satwa"
+                  ? L("Wildlife Guide", "Panduan Satwa")
                   : selectedFeature
                     ? "Field Dossier"
                     : "Field Notes"}
@@ -2132,7 +2171,7 @@ export default function MapPage() {
                   ? selectedWildlife.commonName
                   : selectedFeature
                     ? selectedFeature.title
-                    : "Buka Catatan"}
+                    : L("Open Notes", "Buka Catatan")}
               </div>
             </div>
           </button>
@@ -2181,14 +2220,17 @@ export default function MapPage() {
                         ? selectedWildlife.commonName
                         : selectedFeature
                           ? selectedFeature.title
-                          : "Catatan Ekosistem"}
+                          : L("Ecosystem Notes", "Catatan Ekosistem")}
                     </h2>
                     <p className="truncate text-[10.5px] font-medium text-[#5c665f]">
                       {selectedWildlife
                         ? `${selectedWildlife.scientificName} · ${selectedWildlife.province}`
                         : selectedFeature
                           ? selectedFeature.subtitle
-                          : "Pilih titik api atau ikon satwa"}
+                          : L(
+                              "Select a fire hotspot or wildlife pin",
+                              "Pilih titik api atau ikon satwa",
+                            )}
                     </p>
                   </div>
 
@@ -2219,7 +2261,7 @@ export default function MapPage() {
                           }}
                           className="cursor-pointer rounded border border-[#cfc3aa] bg-[#f2ebdc] px-1.5 py-0.5 font-mono text-[9px] font-bold text-[#3d4741] hover:bg-[#e7decb]"
                         >
-                          ← Wilayah
+                          {L("← Region", "← Wilayah")}
                         </button>
                       </div>
 
@@ -2253,7 +2295,7 @@ export default function MapPage() {
                                 {selectedWildlife.storyRole}
                               </div>
                               <div className="font-mono text-[9px] text-[#5c665f]">
-                                Tren Populasi:{" "}
+                                {L("Population Trend:", "Tren Populasi:")}{" "}
                                 <span className="font-bold uppercase text-[#983226]">
                                   {selectedWildlife.populationTrend}
                                 </span>
@@ -2264,7 +2306,7 @@ export default function MapPage() {
                           <div className="grid grid-cols-2 gap-1.5">
                             <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                               <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
-                                Lokasi Temuan (GBIF)
+                                {L("GBIF Observation", "Lokasi Temuan (GBIF)")}
                               </div>
                               <div className="mt-0.5 text-[10.5px] font-bold text-[#1a221d] leading-snug">
                                 {selectedWildlife.locality}
@@ -2276,16 +2318,16 @@ export default function MapPage() {
 
                             <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                               <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
-                                Jarak ke Api Terdekat
+                                {L("Nearest Active Fire", "Jarak ke Api Terdekat")}
                               </div>
                               <div className="mt-0.5 font-mono text-sm font-extrabold text-[#b91c1c]">
                                 {selectedWildlife.nearestFireKm !== null
                                   ? `±${selectedWildlife.nearestFireKm} km`
-                                  : "Pantauan Aman"}
+                                  : L("Safe Zone", "Pantauan Aman")}
                               </div>
                               <div className="truncate font-mono text-[8.5px] text-[#5c665f]">
                                 {selectedWildlife.nearestFireLocation ||
-                                  "Belum ada hotspot aktif"}
+                                  L("No active hotspot nearby", "Belum ada hotspot aktif")}
                               </div>
                             </div>
                           </div>
@@ -2297,7 +2339,7 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#15803d] uppercase">
-                              Habitat Asli &amp; Ekosistem
+                              {L("Native Habitat & Ecosystem", "Habitat Asli & Ekosistem")}
                             </span>
                             <span className="rounded bg-[#dcfce7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#15803d]">
                               {selectedWildlife.province}
@@ -2314,7 +2356,7 @@ export default function MapPage() {
                           {selectedWildlife.nearestNdvi && (
                             <div className="rounded-md border border-[#d6cbb5] bg-white/80 p-2 text-[10px] text-[#2f3933]">
                               <div className="font-mono text-[8.5px] font-bold text-[#15803d] uppercase">
-                                Kondisi Kanopi (ML NDVI ·{" "}
+                                {L("Canopy Condition (ML NDVI", "Kondisi Kanopi (ML NDVI")} ·{" "}
                                 {selectedWildlife.nearestNdvi.distanceKm} km)
                               </div>
                               <div className="mt-0.5 font-semibold text-[#1a221d]">
@@ -2340,10 +2382,10 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#983226] uppercase">
-                              Ancaman Utama Spesies
+                              {L("Primary Species Threats", "Ancaman Utama Spesies")}
                             </span>
                             <span className="rounded bg-[#fee2e2] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#983226]">
-                              {selectedWildlife.threats.length} Faktor Risiko
+                              {selectedWildlife.threats.length} {L("Risk Factors", "Faktor Risiko")}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -2357,15 +2399,31 @@ export default function MapPage() {
                             ))}
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
-                            <Stabilo color="pink">
-                              Kebakaran gambut dan fragmentasi koridor
-                            </Stabilo>{" "}
-                            memutus jalur jelajah alami, menghilangkan pohon
-                            sarang &amp; sumber pakan, serta memaksa{" "}
-                            <Stabilo color="yellow">
-                              {selectedWildlife.commonName}
-                            </Stabilo>{" "}
-                            keluar menuju area konflik manusia-satwa.
+                            {isId ? (
+                              <>
+                                <Stabilo color="pink">
+                                  Kebakaran gambut dan fragmentasi koridor
+                                </Stabilo>{" "}
+                                memutus jalur jelajah alami, menghilangkan pohon
+                                sarang &amp; sumber pakan, serta memaksa{" "}
+                                <Stabilo color="yellow">
+                                  {selectedWildlife.commonName}
+                                </Stabilo>{" "}
+                                keluar menuju area konflik manusia-satwa.
+                              </>
+                            ) : (
+                              <>
+                                <Stabilo color="pink">
+                                  Peatland fires and corridor fragmentation
+                                </Stabilo>{" "}
+                                sever natural movement routes, destroy nesting
+                                trees &amp; food sources, and force{" "}
+                                <Stabilo color="yellow">
+                                  {selectedWildlife.commonName}
+                                </Stabilo>{" "}
+                                into human-wildlife conflict zones.
+                              </>
+                            )}
                           </p>
                         </div>
                       )}
@@ -2375,39 +2433,54 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#0369a1] uppercase">
-                              Peran Radar SAR &amp; Konservasi
+                              {L("SAR Radar & Conservation", "Peran Radar SAR & Konservasi")}
                             </span>
                             <span className="rounded bg-[#e0f2fe] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#0369a1]">
                               NISAR L-Band
                             </span>
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
-                            Gelombang{" "}
-                            <Stabilo color="blue">
-                              NISAR L-Band (24 cm) &amp; Sentinel-1
-                            </Stabilo>{" "}
-                            menembus kabut asap untuk memetakan{" "}
-                            <Stabilo color="yellow">
-                              pengeringan gambut &amp; batas luka bakar
-                            </Stabilo>{" "}
-                            di sekitar koridor satwa sebelum api membesar.
+                            {isId ? (
+                              <>
+                                Gelombang{" "}
+                                <Stabilo color="blue">
+                                  NISAR L-Band (24 cm) &amp; Sentinel-1
+                                </Stabilo>{" "}
+                                menembus kabut asap untuk memetakan{" "}
+                                <Stabilo color="yellow">
+                                  pengeringan gambut &amp; batas luka bakar
+                                </Stabilo>{" "}
+                                di sekitar koridor satwa sebelum api membesar.
+                              </>
+                            ) : (
+                              <>
+                                <Stabilo color="blue">
+                                  NISAR L-Band (24 cm) &amp; Sentinel-1
+                                </Stabilo>{" "}
+                                radar waves penetrate dense smoke to map{" "}
+                                <Stabilo color="yellow">
+                                  peatland drying &amp; burn scar perimeters
+                                </Stabilo>{" "}
+                                around wildlife corridors before fires escalate.
+                              </>
+                            )}
                           </p>
                           <div className="grid grid-cols-2 gap-1.5">
                             <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                               <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
-                                Catatan GBIF
+                                {L("GBIF Records", "Catatan GBIF")}
                               </div>
                               <div className="mt-0.5 font-mono text-xs font-extrabold text-[#15803d]">
                                 {selectedWildlife.occurrencesCount.toLocaleString()}{" "}
-                                rekaman
+                                {L("records", "rekaman")}
                               </div>
                             </div>
                             <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                               <div className="font-mono text-[8px] font-bold text-[#646e67] uppercase">
-                                Asesmen IUCN
+                                {L("IUCN Assessment", "Asesmen IUCN")}
                               </div>
                               <div className="mt-0.5 font-mono text-xs font-extrabold text-[#1a221d]">
-                                Tahun {selectedWildlife.lastAssessed}
+                                {L("Year", "Tahun")} {selectedWildlife.lastAssessed}
                               </div>
                             </div>
                           </div>
@@ -2431,7 +2504,7 @@ export default function MapPage() {
                           }}
                           className="cursor-pointer shrink-0 rounded-md border border-[#cfc3aa] bg-[#f2ebdc] px-2 py-0.5 font-mono text-[9px] font-bold text-[#2b352f] hover:bg-[#e5dbc6]"
                         >
-                          ← Wilayah
+                          {L("← Region", "← Wilayah")}
                         </button>
                       </div>
 
@@ -2443,7 +2516,7 @@ export default function MapPage() {
                               {
                                 tab: "01",
                                 num: "01",
-                                label: "Sinyal Satelit",
+                                label: L("Satellite Signal", "Sinyal Satelit"),
                                 metric: `${selectedFeature.tempC}°C`,
                                 sub: `${selectedFeature.sarDb} dB SAR`,
                                 accent: "border-l-[#0284c7]",
@@ -2451,7 +2524,7 @@ export default function MapPage() {
                               {
                                 tab: "02",
                                 num: "02",
-                                label: "Air & Gambut",
+                                label: L("Water & Peat", "Air & Gambut"),
                                 metric: `SMI ${selectedFeature.smi}`,
                                 sub: `FWI ${selectedFeature.fwi}`,
                                 accent: "border-l-[#d97706]",
@@ -2459,15 +2532,15 @@ export default function MapPage() {
                               {
                                 tab: "03",
                                 num: "03",
-                                label: "Koridor Satwa",
-                                metric: `${selectedFeature.wildlifeScope?.speciesList?.length || 0} Spesies`,
+                                label: L("Wildlife Corridor", "Koridor Satwa"),
+                                metric: `${selectedFeature.wildlifeScope?.speciesList?.length || 0} ${L("Species", "Spesies")}`,
                                 sub: `Radius ${selectedFeature.wildlifeScope?.radiusKm || 60} km`,
                                 accent: "border-l-[#15803d]",
                               },
                               {
                                 tab: "04",
                                 num: "04",
-                                label: "Warga & Asap",
+                                label: L("Community & Smoke", "Warga & Asap"),
                                 metric: `${selectedFeature.windSpeedMs ?? meteomaticsData.windSpeedMs} m/s`,
                                 sub:
                                   selectedFeature.windCompass ??
@@ -2520,11 +2593,23 @@ export default function MapPage() {
                           )}
 
                           <div className="rounded-md border border-dashed border-[#c7bba2] bg-[#f4eee1] px-2.5 py-2 text-[10.5px] text-[#434d46]">
-                            Pilih{" "}
-                            <Stabilo color="yellow">
-                              bookmark di sisi kanan
-                            </Stabilo>{" "}
-                            untuk membaca penjelasan lengkap tiap dampak.
+                            {isId ? (
+                              <>
+                                Pilih{" "}
+                                <Stabilo color="yellow">
+                                  bookmark di sisi kanan
+                                </Stabilo>{" "}
+                                untuk membaca penjelasan lengkap tiap dampak.
+                              </>
+                            ) : (
+                              <>
+                                Select a{" "}
+                                <Stabilo color="yellow">
+                                  bookmark on the right
+                                </Stabilo>{" "}
+                                to read the detailed impact breakdown.
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -2534,7 +2619,7 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#0369a1] uppercase">
-                              Bab 01 · Sinyal Satelit
+                              {L("Ch. 01 · Satellite Signal", "Bab 01 · Sinyal Satelit")}
                             </span>
                             <span className="rounded bg-[#e0f2fe] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#0369a1]">
                               {selectedFeature.tempC}°C ·{" "}
@@ -2543,28 +2628,49 @@ export default function MapPage() {
                           </div>
                           <div className="font-display text-sm font-bold text-[#1a221d]">
                             <Stabilo color="blue">
-                              {selectedFeature.impactChain.sarHeadline}
+                              {isId
+                                ? selectedFeature.impactChain.sarHeadline
+                                : selectedFeature.impactChain.sarHeadlineEn}
                             </Stabilo>
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
                             {selectedFeature.impactChain.isHighEnergy ? (
-                              <>
-                                Penurunan pantulan balik SAR (
-                                <Stabilo color="yellow">
-                                  {selectedFeature.sarDb} dB, Δ{" "}
-                                  {selectedFeature.sarDrop} dB
-                                </Stabilo>
-                                ) dan energi radiatif{" "}
-                                <Stabilo color="pink">
-                                  {selectedFeature.frpVal} MW
-                                </Stabilo>{" "}
-                                menandakan{" "}
-                                <Stabilo color="yellow">
-                                  kanopi menipis drastis di balik kabut asap
-                                </Stabilo>
-                                .
-                              </>
-                            ) : (
+                              isId ? (
+                                <>
+                                  Penurunan pantulan balik SAR (
+                                  <Stabilo color="yellow">
+                                    {selectedFeature.sarDb} dB, Δ{" "}
+                                    {selectedFeature.sarDrop} dB
+                                  </Stabilo>
+                                  ) dan energi radiatif{" "}
+                                  <Stabilo color="pink">
+                                    {selectedFeature.frpVal} MW
+                                  </Stabilo>{" "}
+                                  menandakan{" "}
+                                  <Stabilo color="yellow">
+                                    kanopi menipis drastis di balik kabut asap
+                                  </Stabilo>
+                                  .
+                                </>
+                              ) : (
+                                <>
+                                  SAR backscatter drop (
+                                  <Stabilo color="yellow">
+                                    {selectedFeature.sarDb} dB, Δ{" "}
+                                    {selectedFeature.sarDrop} dB
+                                  </Stabilo>
+                                  ) and radiative power{" "}
+                                  <Stabilo color="pink">
+                                    {selectedFeature.frpVal} MW
+                                  </Stabilo>{" "}
+                                  indicate{" "}
+                                  <Stabilo color="yellow">
+                                    rapid canopy thinning beneath dense smoke
+                                  </Stabilo>
+                                  .
+                                </>
+                              )
+                            ) : isId ? (
                               <>
                                 Anomali termal ({selectedFeature.tempK} K)
                                 disertai penurunan koherensi SAR (
@@ -2578,6 +2684,23 @@ export default function MapPage() {
                                 yang tetap terbaca{" "}
                                 <Stabilo color="yellow">
                                   menembus awan dan asap
+                                </Stabilo>
+                                .
+                              </>
+                            ) : (
+                              <>
+                                Thermal anomaly ({selectedFeature.tempK} K)
+                                paired with SAR coherence loss (
+                                <Stabilo color="yellow">
+                                  {selectedFeature.sarDb} dB
+                                </Stabilo>
+                                ) signals{" "}
+                                <Stabilo color="blue">
+                                  active vegetation disturbance
+                                </Stabilo>{" "}
+                                clearly detected{" "}
+                                <Stabilo color="yellow">
+                                  through clouds and smoke
                                 </Stabilo>
                                 .
                               </>
@@ -2601,7 +2724,7 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#b45309] uppercase">
-                              Bab 02 · Air &amp; Gambut
+                              {L("Ch. 02 · Water & Peat", "Bab 02 · Air & Gambut")}
                             </span>
                             <span className="rounded bg-[#fef3c7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#b45309]">
                               SMI {selectedFeature.smi} · FWI{" "}
@@ -2610,27 +2733,47 @@ export default function MapPage() {
                           </div>
                           <div className="font-display text-sm font-bold text-[#1a221d]">
                             <Stabilo color="yellow">
-                              {selectedFeature.impactChain.peatHeadline}
+                              {isId
+                                ? selectedFeature.impactChain.peatHeadline
+                                : selectedFeature.impactChain.peatHeadlineEn}
                             </Stabilo>
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
                             {selectedFeature.impactChain.isPeat ? (
-                              <>
-                                Lahan gambut dengan kelembapan{" "}
-                                <Stabilo color="yellow">
-                                  SMI {selectedFeature.smi}
-                                </Stabilo>{" "}
-                                rentan mengalami{" "}
-                                <Stabilo color="pink">
-                                  kebakaran bawah permukaan (smoldering)
-                                </Stabilo>{" "}
-                                yang sulit padam serta{" "}
-                                <Stabilo color="yellow">
-                                  melepas karbon tersimpan
-                                </Stabilo>
-                                .
-                              </>
-                            ) : (
+                              isId ? (
+                                <>
+                                  Lahan gambut dengan kelembapan{" "}
+                                  <Stabilo color="yellow">
+                                    SMI {selectedFeature.smi}
+                                  </Stabilo>{" "}
+                                  rentan mengalami{" "}
+                                  <Stabilo color="pink">
+                                    kebakaran bawah permukaan (smoldering)
+                                  </Stabilo>{" "}
+                                  yang sulit padam serta{" "}
+                                  <Stabilo color="yellow">
+                                    melepas karbon tersimpan
+                                  </Stabilo>
+                                  .
+                                </>
+                              ) : (
+                                <>
+                                  Peatland soil at moisture{" "}
+                                  <Stabilo color="yellow">
+                                    SMI {selectedFeature.smi}
+                                  </Stabilo>{" "}
+                                  is prone to{" "}
+                                  <Stabilo color="pink">
+                                    subsurface smoldering fires
+                                  </Stabilo>{" "}
+                                  that are hard to extinguish and{" "}
+                                  <Stabilo color="yellow">
+                                    release stored peat carbon
+                                  </Stabilo>
+                                  .
+                                </>
+                              )
+                            ) : isId ? (
                               <>
                                 Kelembapan tanah saat ini{" "}
                                 <Stabilo color="yellow">
@@ -2646,6 +2789,22 @@ export default function MapPage() {
                                 </Stabilo>
                                 .
                               </>
+                            ) : (
+                              <>
+                                Current soil moisture is{" "}
+                                <Stabilo color="yellow">
+                                  SMI {selectedFeature.smi}
+                                </Stabilo>{" "}
+                                with fire weather index{" "}
+                                <Stabilo color="blue">
+                                  FWI {selectedFeature.fwi}
+                                </Stabilo>
+                                , requiring{" "}
+                                <Stabilo color="yellow">
+                                  canal and forest-edge monitoring
+                                </Stabilo>
+                                .
+                              </>
                             )}
                           </p>
                         </div>
@@ -2656,7 +2815,7 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#15803d] uppercase">
-                              Bab 03 · Koridor Satwa
+                              {L("Ch. 03 · Wildlife Corridor", "Bab 03 · Koridor Satwa")}
                             </span>
                             <span className="rounded bg-[#dcfce7] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#15803d]">
                               Radius{" "}
@@ -2666,7 +2825,9 @@ export default function MapPage() {
                           </div>
                           <div className="font-display text-sm font-bold text-[#1a221d]">
                             <Stabilo color="green">
-                              {selectedFeature.impactChain.wildlifeHeadline}
+                              {isId
+                                ? selectedFeature.impactChain.wildlifeHeadline
+                                : selectedFeature.impactChain.wildlifeHeadlineEn}
                             </Stabilo>
                           </div>
                           <div className="flex flex-wrap gap-1">
@@ -2683,18 +2844,27 @@ export default function MapPage() {
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
                             {selectedFeature.wildlifeScope?.impactSummary ||
-                              "Koridor habitat terancam fragmentasi dan paparan asap pekat."}{" "}
-                            Fokus pantauan:{" "}
+                              L(
+                                "Habitat corridor is threatened by fragmentation and dense smoke exposure.",
+                                "Koridor habitat terancam fragmentasi dan paparan asap pekat.",
+                              )}{" "}
+                            {L("Focus area:", "Fokus pantauan:")}{" "}
                             <Stabilo color="green">
                               {selectedFeature.wildlifeScope?.corridorName ||
-                                "Koridor Hutan & Gambut Terdekat"}
+                                L(
+                                  "Nearest Forest & Peat Corridor",
+                                  "Koridor Hutan & Gambut Terdekat",
+                                )}
                             </Stabilo>
                             .
                           </p>
                           <div className="rounded-md border border-[#e5c99b] bg-[#fdf6e7] px-2.5 py-1.5 text-[9.5px] italic text-[#7c5216]">
-                            Batas bukti ilmiah:{" "}
+                            {L("Scientific evidence limit:", "Batas bukti ilmiah:")}{" "}
                             <Stabilo color="yellow">
-                              tekanan habitat, bukan bukti kematian satwa
+                              {L(
+                                "habitat pressure, not wildlife mortality proof",
+                                "tekanan habitat, bukan bukti kematian satwa",
+                              )}
                             </Stabilo>
                             .
                           </div>
@@ -2706,7 +2876,7 @@ export default function MapPage() {
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between border-b border-[#e0d6c1] pb-1.5">
                             <span className="font-mono text-[10px] font-bold tracking-wider text-[#983226] uppercase">
-                              Bab 04 · Warga &amp; Asap
+                              {L("Ch. 04 · Community & Smoke", "Bab 04 · Warga & Asap")}
                             </span>
                             <span className="rounded bg-[#fee2e2] px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#983226]">
                               {selectedFeature.windSpeedMs ??
@@ -2716,24 +2886,47 @@ export default function MapPage() {
                           </div>
                           <div className="font-display text-sm font-bold text-[#1a221d]">
                             <Stabilo color="pink">
-                              {selectedFeature.impactChain.communityHeadline}
+                              {isId
+                                ? selectedFeature.impactChain.communityHeadline
+                                : selectedFeature.impactChain.communityHeadlineEn}
                             </Stabilo>
                           </div>
                           <p className="text-[11.5px] leading-[1.7] text-[#2d3630]">
-                            Angin{" "}
-                            <Stabilo color="yellow">
-                              {selectedFeature.windCompass ??
-                                meteomaticsData.windCompass}{" "}
-                              (
-                              {selectedFeature.windSpeedMs ??
-                                meteomaticsData.windSpeedMs}{" "}
-                              m/s)
-                            </Stabilo>{" "}
-                            berpotensi membawa partikulat asap ke{" "}
-                            <Stabilo color="pink">
-                              permukiman hilir dan wilayah udara sekitar
-                            </Stabilo>
-                            .
+                            {isId ? (
+                              <>
+                                Angin{" "}
+                                <Stabilo color="yellow">
+                                  {selectedFeature.windCompass ??
+                                    meteomaticsData.windCompass}{" "}
+                                  (
+                                  {selectedFeature.windSpeedMs ??
+                                    meteomaticsData.windSpeedMs}{" "}
+                                  m/s)
+                                </Stabilo>{" "}
+                                berpotensi membawa partikulat asap ke{" "}
+                                <Stabilo color="pink">
+                                  permukiman hilir dan wilayah udara sekitar
+                                </Stabilo>
+                                .
+                              </>
+                            ) : (
+                              <>
+                                Winds from{" "}
+                                <Stabilo color="yellow">
+                                  {selectedFeature.windCompass ??
+                                    meteomaticsData.windCompass}{" "}
+                                  (
+                                  {selectedFeature.windSpeedMs ??
+                                    meteomaticsData.windSpeedMs}{" "}
+                                  m/s)
+                                </Stabilo>{" "}
+                                may carry smoke particulates toward{" "}
+                                <Stabilo color="pink">
+                                  downstream settlements and surrounding airspace
+                                </Stabilo>
+                                .
+                              </>
+                            )}
                           </p>
                         </div>
                       )}
@@ -2744,7 +2937,7 @@ export default function MapPage() {
                       <div className="grid grid-cols-2 gap-1.5">
                         <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                           <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
-                            Zona Gambut
+                            {L("Peat Zones", "Zona Gambut")}
                           </div>
                           <div className="mt-0.5 font-mono text-sm font-extrabold text-[#b45309]">
                             <Stabilo color="yellow">
@@ -2758,21 +2951,21 @@ export default function MapPage() {
 
                         <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                           <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
-                            Irisan Habitat
+                            {L("Habitat Overlap", "Irisan Habitat")}
                           </div>
                           <div className="mt-0.5 font-mono text-sm font-extrabold text-[#15803d]">
                             <Stabilo color="green">
                               {ecosystemSummary.wildlifeOverlapCount}
                             </Stabilo>
                             <span className="ml-1 text-[10px] font-normal text-[#646e67]">
-                              titik
+                              {L("pts", "titik")}
                             </span>
                           </div>
                         </div>
 
                         <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                           <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
-                            Energi Tinggi
+                            {L("High Energy", "Energi Tinggi")}
                           </div>
                           <div className="mt-0.5 font-mono text-sm font-extrabold text-[#983226]">
                             <Stabilo color="pink">
@@ -2786,7 +2979,7 @@ export default function MapPage() {
 
                         <div className="rounded-md border border-[#e0d6c1] bg-white/75 p-2">
                           <div className="font-mono text-[8.5px] font-bold text-[#646e67] uppercase">
-                            Gambut &amp; Angin
+                            {L("Peat & Wind", "Gambut & Angin")}
                           </div>
                           <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#0369a1]">
                             <Stabilo color="blue">
@@ -2801,7 +2994,10 @@ export default function MapPage() {
 
                       <div>
                         <div className="mb-1 font-mono text-[9px] font-bold tracking-wider text-[#5c665f] uppercase">
-                          Koridor Prioritas (Klik untuk Fokus)
+                          {L(
+                            "Priority Corridors (Click to Focus)",
+                            "Koridor Prioritas (Klik untuk Fokus)",
+                          )}
                         </div>
                         <div className="divide-y divide-[#e0d6c1] rounded-md border border-[#e0d6c1] bg-white/70">
                           {ecosystemSummary.corridorImpacts
@@ -2840,7 +3036,7 @@ export default function MapPage() {
                 {[
                   {
                     id: "profil",
-                    label: "Profil",
+                    label: L("Profile", "Profil"),
                     color: "bg-[#15803d] text-white",
                     idle: "bg-[#dcfce7] text-[#14532d]",
                   },
@@ -2852,13 +3048,13 @@ export default function MapPage() {
                   },
                   {
                     id: "ancaman",
-                    label: "Ancaman",
+                    label: L("Threats", "Ancaman"),
                     color: "bg-[#983226] text-white",
                     idle: "bg-[#fee2e2] text-[#7f1d1d]",
                   },
                   {
                     id: "aksi",
-                    label: "SAR Aksi",
+                    label: L("SAR Action", "SAR Aksi"),
                     color: "bg-[#0369a1] text-white",
                     idle: "bg-[#dbeafe] text-[#1e3a8a]",
                   },
@@ -2885,7 +3081,7 @@ export default function MapPage() {
                 {[
                   {
                     id: "cover",
-                    label: "Ringkas",
+                    label: L("Summary", "Ringkas"),
                     color: "bg-[#2b352f] text-[#faf6ee]",
                     idle: "bg-[#e9e0ce] text-[#454f48]",
                   },
@@ -2897,19 +3093,19 @@ export default function MapPage() {
                   },
                   {
                     id: "02",
-                    label: "02 · Gambut",
+                    label: L("02 · Peat", "02 · Gambut"),
                     color: "bg-[#b45309] text-white",
                     idle: "bg-[#fef3c7] text-[#78350f]",
                   },
                   {
                     id: "03",
-                    label: "03 · Satwa",
+                    label: L("03 · Wildlife", "03 · Satwa"),
                     color: "bg-[#15803d] text-white",
                     idle: "bg-[#dcfce7] text-[#14532d]",
                   },
                   {
                     id: "04",
-                    label: "04 · Asap",
+                    label: L("04 · Smoke", "04 · Asap"),
                     color: "bg-[#983226] text-white",
                     idle: "bg-[#fee2e2] text-[#7f1d1d]",
                   },
@@ -2976,10 +3172,11 @@ export default function MapPage() {
 
                   <div className="flex flex-col border-l border-white/15 pl-2.5">
                     <span className="font-mono text-[9px] font-bold tracking-wider text-[#e5c787] uppercase">
-                      {selectedFeature?.title || "Perbandingan Kondisi Lahan"}
+                      {selectedFeature?.title ||
+                        L("Land Change Comparison", "Perbandingan Kondisi Lahan")}
                     </span>
                     <span className="text-xs font-bold tracking-tight text-white">
-                      {activePhaseConfig.title}
+                      {isId ? activePhaseConfig.title : activePhaseConfig.titleEn}
                     </span>
                   </div>
                 </div>
@@ -2999,8 +3196,8 @@ export default function MapPage() {
                     }`}
                   >
                     {basemapMode === "sar-dark"
-                      ? "Mode Radar SAR · Tembus Asap"
-                      : "Mode Optik EO · Tembus dgn SAR →"}
+                      ? L("SAR Radar · Smoke Penetrated", "Mode Radar SAR · Tembus Asap")
+                      : L("Optical EO · Penetrate w/ SAR →", "Mode Optik EO · Tembus dgn SAR →")}
                   </button>
 
                   <button
@@ -3041,10 +3238,12 @@ export default function MapPage() {
                     >
                       <div className="min-w-0">
                         <div className="font-mono text-[9px] font-bold uppercase opacity-85">
-                          {ph.id === 0 ? "Arsip Historis" : "Kondisi Terkini"}
+                          {ph.id === 0
+                            ? L("Historical Archive", "Arsip Historis")
+                            : L("Current State", "Kondisi Terkini")}
                         </div>
                         <div className="truncate text-xs font-extrabold">
-                          {ph.short}
+                          {isId ? ph.short : ph.shortEn}
                         </div>
                       </div>
                       <span
@@ -3064,7 +3263,7 @@ export default function MapPage() {
               {/* Phase Description Strip */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e4dac5] bg-[#f1eadc] px-3.5 py-1.5 text-[10.5px] text-[#2f3933]">
                 <span className="min-w-0 flex-1 leading-snug">
-                  {activePhaseConfig.desc}
+                  {isId ? activePhaseConfig.desc : activePhaseConfig.descEn}
                 </span>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {selectedFeature?.nearestNdvi && (
@@ -3092,15 +3291,22 @@ export default function MapPage() {
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white bg-[#983226] text-[10px] text-white">
                 🔥
               </span>
-              Titik Panas Fase Aktif ({phaseFireEvents.length})
+              {L("Active Phase Hotspots", "Titik Panas Fase Aktif")} (
+              {phaseFireEvents.length})
             </span>
             <span className="flex items-center gap-1.5 font-semibold text-emerald-300">
               <span>🦧🐅🦜</span>
-              Koridor Habitat Satwa Endemik (IUCN CR/EN)
+              {L(
+                "Endemic Wildlife Corridors (IUCN CR/EN)",
+                "Koridor Habitat Satwa Endemik (IUCN CR/EN)",
+              )}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-xs border border-sky-400 bg-sky-500/40" />
-              Jejak Sapuan Radar SAR (NISAR / Sentinel-1)
+              {L(
+                "SAR Radar Swaths (NISAR / Sentinel-1)",
+                "Jejak Sapuan Radar SAR (NISAR / Sentinel-1)",
+              )}
             </span>
           </div>
 
