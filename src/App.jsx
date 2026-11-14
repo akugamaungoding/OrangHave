@@ -6,6 +6,8 @@ import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import MapPage from './pages/MapPage';
 import GamePage from './pages/GamePage';
+import RadarRescueGamePage from './pages/RadarRescueGamePage';
+import KarhutlaArcadeGamePage from './pages/KarhutlaArcadeGamePage';
 
 /**
  * ScrollToTop helper: scrolls window back to (0, 0) on route change
@@ -55,6 +57,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/game" element={<GamePage />} />
+          <Route path="/game/radar-rescue" element={<RadarRescueGamePage />} />
+          <Route path="/game/karhutla-arcade" element={<KarhutlaArcadeGamePage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
