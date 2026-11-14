@@ -6,6 +6,13 @@ const QUICK_LINKS = [
   { path: '/', labelKey: 'nav.home' },
   { path: '/game', labelKey: 'nav.game' },
   { path: '/map', labelKey: 'nav.map' },
+  { path: '/wildlife', labelKey: 'nav.wildlife' },
+  { path: '/reach', labelKey: 'nav.reach' },
+  { path: '/action', labelKey: 'nav.action' },
+  { path: '/dashboard', labelKey: 'nav.dashboard' },
+  { path: '/transparency', labelKey: 'nav.transparency' },
+  { path: '/future', labelKey: 'nav.future' },
+  { path: '/sponsor', labelKey: 'nav.sponsor' },
 ];
 
 const PARTNERS = [
@@ -43,10 +50,10 @@ export default function Footer() {
       <div className="absolute -top-3 left-0 right-0 h-3 bg-gradient-to-b from-transparent to-paper-edge/30 pointer-events-none" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 pb-16">
-        
+
         {/* Top Row: Brand & Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-12 border-b border-paper-edge/80">
-          
+
           {/* Column 1: Brand & Story Quote */}
           <div className="lg:col-span-1 space-y-4">
             <Link to="/" className="inline-block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 rounded">
@@ -146,7 +153,7 @@ export default function Footer() {
 
         {/* Middle Section: Partners & Data Attribution */}
         <div className="py-8 grid grid-cols-1 lg:grid-cols-2 gap-8 border-b border-paper-edge/80 text-xs text-charcoal-600">
-          
+
           {/* Partner Attribution */}
           <div className="space-y-2">
             <h4 className="font-semibold text-charcoal-700 uppercase tracking-wider text-[11px]">

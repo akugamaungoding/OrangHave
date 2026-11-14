@@ -73,7 +73,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
 
         {/* Desktop Navigation Links */}
         <nav
-          className="hidden md:flex items-center gap-1"
+          className="hidden xl:flex items-center gap-1"
           aria-label="Primary Navigation"
         >
           {NAV_ITEMS.map((item) => (
@@ -98,6 +98,27 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
                   )}
                 </>
               )}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Medium Screen Navigation (Compact) */}
+        <nav
+          className="hidden md:flex xl:hidden items-center gap-1"
+          aria-label="Compact Primary Navigation"
+        >
+          {NAV_ITEMS.slice(0, 4).map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${isActive
+                  ? 'text-moss-900 bg-moss-100 font-semibold'
+                  : 'text-charcoal-700 hover:text-moss-800 hover:bg-cream-200/60'
+                }`
+              }
+            >
+              {t(item.labelKey)}
             </NavLink>
           ))}
         </nav>
@@ -131,7 +152,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
           </div>
           <SoundToggle />
 
-          {/* Mobile Hamburger Toggle */}
+          {/* Mobile / Tablet Hamburger Toggle */}
           <button
             ref={hamburgerButtonRef}
             type="button"
@@ -139,7 +160,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
             aria-expanded={isOpen}
             aria-controls="mobile-navigation-drawer"
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-charcoal-700 hover:bg-cream-200 hover:text-charcoal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 cursor-pointer"
+            className="xl:hidden inline-flex items-center justify-center p-2 rounded-lg text-charcoal-700 hover:bg-cream-200 hover:text-charcoal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 cursor-pointer"
           >
             <span className="sr-only">{isOpen ? 'Close menu' : 'Open menu'}</span>
             <div className="w-5 h-5 relative flex items-center justify-center">
@@ -163,7 +184,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
       {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-charcoal-950/40 backdrop-blur-xs transition-opacity md:hidden"
+          className="fixed inset-0 z-40 bg-charcoal-950/40 backdrop-blur-xs transition-opacity xl:hidden"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -176,7 +197,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile Navigation"
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out md:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out xl:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
       >
         <div>
