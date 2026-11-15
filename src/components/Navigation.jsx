@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { t, useTranslation } from '../i18n';
+import { t } from '../i18n';
 import SoundToggle from './SoundToggle';
 
 const NAV_ITEMS = [
@@ -10,7 +10,6 @@ const NAV_ITEMS = [
 ];
 
 export default function Navigation({ onOpenBrief, onReplaySplash }) {
-  const { locale, setLocale } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef(null);
   const hamburgerButtonRef = useRef(null);
@@ -103,27 +102,6 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          <div
-            className="flex rounded-full border border-[#d6c7ac] bg-[#efe6d3]/85 p-0.5 shadow-inner"
-            role="group"
-            aria-label={t('common.language')}
-          >
-            {['en', 'id'].map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLocale(code)}
-                aria-pressed={locale === code}
-                className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-all ${
-                  locale === code
-                    ? 'bg-[#18442e] text-[#faf6ee] shadow-xs'
-                    : 'text-[#5c5346] hover:text-[#18442e]'
-                }`}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
           <SoundToggle inline />
 
           {/* Mobile / Tablet Hamburger Toggle */}

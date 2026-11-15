@@ -81,48 +81,9 @@ export function t(key, paramsOrFallback) {
  * @param {string} locale
  * @returns {Promise<string>} Active locale
  */
-export async function setLocale(locale) {
-  if (!locale) return currentLocale;
-  const target = locale.toLowerCase();
-
-  if (target === currentLocale) {
-    return currentLocale;
-  }
-
-  if (target === 'en') {
-    currentLocale = 'en';
-    notifyListeners();
-    return currentLocale;
-  }
-
-  if (target === 'id') {
-    if (!translations.id) {
-      try {
-        // Attempt lazy-load Indonesian dictionary if file exists
-        const module = await import('./id.json');
-        translations.id = module.default || module;
-      } catch (err) {
-        console.warn(`[i18n] Failed to load translations for "${target}". Falling back to English.`, err);
-        translations.id = translations.en;
-      }
-    }
-    currentLocale = 'id';
-    notifyListeners();
-    return currentLocale;
-  }
-
-  console.warn(`[i18n] Unsupported locale "${locale}". Remaining on "${currentLocale}".`);
+export async function setLocale() {
+  currentLocale = 'en';
   return currentLocale;
-}
-
-function notifyListeners() {
-  listeners.forEach((listener) => {
-    try {
-      listener(currentLocale);
-    } catch (e) {
-      console.error('[i18n] Listener error:', e);
-    }
-  });
 }
 
 /**

@@ -166,8 +166,8 @@ const GAMES = [
     path: '/game/karhutla-arcade',
     badgeEn: 'GAME 02 • CRAZY ARCADE STYLE',
     badgeId: 'GAME 02 • GAYA CRAZY ARCADE',
-    titleEn: 'Karhutla Water-Bomb Arcade',
-    titleId: 'Arcade Bom Air Karhutla',
+    titleEn: 'Water-Bomb Arcade',
+    titleId: 'Arcade Bom Air',
     subtitleEn: 'Classic grid-based Crazy Arcade action! Drop water bombs, blast burning peat blocks, dodge fireballs, and save trapped animals.',
     subtitleId: 'Aksi grid ala Crazy Arcade klasik! Pasang bom air, padamkan blok gambut terbakar, hindari bola api, dan bebaskan satwa.',
     goalEn: 'Goal: Blast burning peat obstacles, collect water power-ups, and rescue every animal in 3 stages.',
@@ -254,98 +254,98 @@ export default function GameHubPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
-      {/* 2 kartu game — gaya Field Board menu Map */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {GAMES.map((game) => (
-          <div
-            key={game.id}
-            className="group flex flex-col overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_14px_36px_rgba(0,0,0,0.16),3px_3px_0_#ded4be] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(0,0,0,0.22),3px_3px_0_#ded4be]"
-          >
-            {/* Header berwarna + garis kuningan */}
-            <div className={`relative border-b-2 border-[#c89d54]/70 bg-gradient-to-br ${game.header} px-5 py-3 text-[#faf6ee]`}>
-              <span className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
-              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-[#e5c787] uppercase">
-                  {isId ? game.badgeId : game.badgeEn}
-                </span>
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-[#faf6ee]/95 text-xl shadow-sm select-none"
-                  role="img"
-                  aria-hidden="true"
-                >
-                  {game.emoji}
-                </span>
-              </div>
-            </div>
-
-            {/* Badan kartu krem bertitik */}
+        {/* 2 kartu game — gaya Field Board menu Map */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {GAMES.map((game) => (
             <div
-              className="flex flex-1 flex-col justify-between p-4 sm:p-5"
-              style={{
-                backgroundImage: 'radial-gradient(rgba(140, 125, 98, 0.12) 1px, transparent 1px)',
-                backgroundSize: '14px 14px',
-              }}
+              key={game.id}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_14px_36px_rgba(0,0,0,0.16),3px_3px_0_#ded4be] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(0,0,0,0.22),3px_3px_0_#ded4be]"
             >
-              <div>
-                {game.id === 'radar-rescue' ? (
-                  <RadarRescuePreview isId={isId} />
-                ) : (
-                  <WaterBombArcadePreview isId={isId} />
-                )}
-
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-[#1a221d]">
-                  {isId ? game.titleId : game.titleEn}
-                </h2>
-                <p className="mt-2 mb-3 text-sm leading-relaxed text-[#333d37]">
-                  {isId ? game.subtitleId : game.subtitleEn}
-                </p>
-
-                <div className="mb-4 rounded-lg border border-[#d6c8ad] bg-white/70 px-3 py-2 text-xs font-medium text-[#2d3b32]">
-                  {isId ? game.goalId : game.goalEn}
-                </div>
-
-                <div className="mb-5 flex flex-wrap gap-2">
-                  {(isId ? game.tagsId : game.tagsEn).map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-lg border border-[#dcd0b8] bg-white/75 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#333d37]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+              {/* Header berwarna + garis kuningan */}
+              <div className={`relative border-b-2 border-[#c89d54]/70 bg-gradient-to-br ${game.header} px-5 py-3 text-[#faf6ee]`}>
+                <span className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
+                <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-[#e5c787] uppercase">
+                    {isId ? game.badgeId : game.badgeEn}
+                  </span>
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-[#faf6ee]/95 text-xl shadow-sm select-none"
+                    role="img"
+                    aria-hidden="true"
+                  >
+                    {game.emoji}
+                  </span>
                 </div>
               </div>
 
-              <Link
-                to={game.path}
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold text-[#faf6ee] shadow-sm transition-colors ${game.cta}`}
+              {/* Badan kartu krem bertitik */}
+              <div
+                className="flex flex-1 flex-col justify-between p-4 sm:p-5"
+                style={{
+                  backgroundImage: 'radial-gradient(rgba(140, 125, 98, 0.12) 1px, transparent 1px)',
+                  backgroundSize: '14px 14px',
+                }}
               >
-                <span>{isId ? game.ctaId : game.ctaEn}</span>
-                <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+                <div>
+                  {game.id === 'radar-rescue' ? (
+                    <RadarRescuePreview isId={isId} />
+                  ) : (
+                    <WaterBombArcadePreview isId={isId} />
+                  )}
 
-      {/* Catatan SDG — kartu krem seperti Beranda */}
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-paper-edge bg-cream-50/90 px-5 py-3 text-xs text-charcoal-700 shadow-sm">
-        {SDG_TAGS.map((g) => (
-          <span
-            key={g.n}
-            className="rounded-md px-2 py-0.5 font-mono text-[10px] font-extrabold text-white"
-            style={{ backgroundColor: g.color }}
-          >
-            SDG {g.n} · {isId ? g.labelId : g.labelEn}
+                  <h2 className="font-display text-2xl font-extrabold tracking-tight text-[#1a221d]">
+                    {isId ? game.titleId : game.titleEn}
+                  </h2>
+                  <p className="mt-2 mb-3 text-sm leading-relaxed text-[#333d37]">
+                    {isId ? game.subtitleId : game.subtitleEn}
+                  </p>
+
+                  <div className="mb-4 rounded-lg border border-[#d6c8ad] bg-white/70 px-3 py-2 text-xs font-medium text-[#2d3b32]">
+                    {isId ? game.goalId : game.goalEn}
+                  </div>
+
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {(isId ? game.tagsId : game.tagsEn).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-lg border border-[#dcd0b8] bg-white/75 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#333d37]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <Link
+                  to={game.path}
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold text-[#faf6ee] shadow-sm transition-colors ${game.cta}`}
+                >
+                  <span>{isId ? game.ctaId : game.ctaEn}</span>
+                  <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Catatan SDG — kartu krem seperti Beranda */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-paper-edge bg-cream-50/90 px-5 py-3 text-xs text-charcoal-700 shadow-sm">
+          {SDG_TAGS.map((g) => (
+            <span
+              key={g.n}
+              className="rounded-md px-2 py-0.5 font-mono text-[10px] font-extrabold text-white"
+              style={{ backgroundColor: g.color }}
+            >
+              SDG {g.n} · {isId ? g.labelId : g.labelEn}
+            </span>
+          ))}
+          <span>
+            {isId
+              ? 'Didukung data observasi Bumi NASA & kesadaran konservasi satwa endemik Indonesia.'
+              : 'Powered by NASA Earth observation concepts & Indonesian endemic wildlife conservation.'}
           </span>
-        ))}
-        <span>
-          {isId
-            ? 'Didukung data observasi Bumi NASA & kesadaran konservasi satwa endemik Indonesia.'
-            : 'Powered by NASA Earth observation concepts & Indonesian endemic wildlife conservation.'}
-        </span>
-      </div>
+        </div>
       </div>
     </div>
   );
