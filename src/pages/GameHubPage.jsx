@@ -170,8 +170,8 @@ const GAMES = [
     titleId: 'Arcade Bom Air',
     subtitleEn: 'Classic grid-based Crazy Arcade action! Drop water bombs, blast burning peat blocks, dodge fireballs, and save trapped animals.',
     subtitleId: 'Aksi grid ala Crazy Arcade klasik! Pasang bom air, padamkan blok gambut terbakar, hindari bola api, dan bebaskan satwa.',
-    goalEn: 'Goal: Blast burning peat obstacles, collect water power-ups, and rescue every animal in 3 stages.',
-    goalId: 'Misi: Ledakkan rintangan gambut terbakar, kumpulkan power-up air, dan selamatkan semua satwa di 3 stage.',
+    goalEn: 'Goal: Blast burning peat obstacles, collect water power-ups, and rescue every animal in 5 stages.',
+    goalId: 'Misi: Ledakkan rintangan gambut terbakar, kumpulkan power-up air, dan selamatkan semua satwa di 5 stage.',
     tagsEn: ['Water-Bomb Grid', 'Power-ups & Enemies', '5 Karhutla Stages'],
     tagsId: ['Grid Bom Air', 'Power-up & Musuh Api', '5 Stage Karhutla'],
     emoji: '💦',
@@ -193,7 +193,16 @@ export default function GameHubPage() {
   const isId = locale === 'id';
 
   return (
-    <div className="w-full">
+    <div className="relative w-full min-h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Subtle Repeating Game, Fire, Arcade Character & SAR Satellite Backdrop */}
+      <div
+        aria-hidden="true"
+        className="animate-game-wallpaper pointer-events-none absolute inset-0 opacity-[0.095]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%2318442e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C!-- SAR Satellite (top-left) --%3E%3Cg transform='translate(18,16) rotate(-18)'%3E%3Crect x='10' y='8' width='12' height='10' rx='2'/%3E%3Crect x='0' y='9' width='8' height='8' rx='1'/%3E%3Crect x='24' y='9' width='8' height='8' rx='1'/%3E%3Cpath d='M16 18 L16 23'/%3E%3Cpath d='M11 26 Q16 30 21 26'/%3E%3Cpath d='M8 30 Q16 36 24 30'/%3E%3C/g%3E%3C!-- Game Controller / Stick (top-right) --%3E%3Cg transform='translate(100,20) rotate(12)'%3E%3Crect x='2' y='8' width='30' height='16' rx='7'/%3E%3Cpath d='M9 13 L9 19 M6 16 L12 16'/%3E%3Ccircle cx='23' cy='14' r='1.3'/%3E%3Ccircle cx='26' cy='17' r='1.3'/%3E%3C/g%3E%3C!-- Fire Flame (bottom-left) --%3E%3Cg transform='translate(24,96) rotate(-8)'%3E%3Cpath d='M14 2 C19 9 23 14 21 21 C19 26 15 28 11 28 C6 28 3 24 3 19 C3 14 7 11 9 7 C10 10 12 11 13 9 C13 6 13 4 14 2 Z' stroke='%23983226'/%3E%3Cpath d='M12 16 C15 19 15 23 12 24 C9 24 8 21 10 18 Z' stroke='%23983226'/%3E%3C/g%3E%3C!-- Cute Arcade Character (bottom-right) --%3E%3Cg transform='translate(102,98) rotate(8)'%3E%3Ccircle cx='14' cy='12' r='9'/%3E%3Crect x='8' y='9' width='12' height='6' rx='2'/%3E%3Ccircle cx='11.5' cy='12' r='0.9' fill='%2318442e'/%3E%3Ccircle cx='16.5' cy='12' r='0.9' fill='%2318442e'/%3E%3Cpath d='M7 21 L21 21 L20 28 L8 28 Z'/%3E%3Ccircle cx='14' cy='3' r='2'/%3E%3C/g%3E%3C!-- Water Drop & Radar Center Accent --%3E%3Ccircle cx='80' cy='80' r='8' stroke='%235c4928' stroke-dasharray='2 3'/%3E%3Ccircle cx='80' cy='80' r='2' fill='%235c4928' stroke='none'/%3E%3Ccircle cx='80' cy='12' r='1.5' fill='%2318442e' stroke='none'/%3E%3Ccircle cx='12' cy='80' r='1.5' fill='%23983226' stroke='none'/%3E%3Ccircle cx='148' cy='80' r='1.5' fill='%2318442e' stroke='none'/%3E%3Ccircle cx='80' cy='148' r='1.5' fill='%23983226' stroke='none'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '160px 160px',
+        }}
+      />
       {/* Full-Bleed Compact Mission Briefing Hero Banner */}
       <div className="relative w-full overflow-hidden border-b-2 border-[#c89d54]/75 bg-gradient-to-br from-[#163a28] via-[#1c4732] to-[#0f291c] text-[#faf6ee] shadow-md">
         {/* Subtle Topographic / Radar Grid Backdrop */}
@@ -225,11 +234,6 @@ export default function GameHubPage() {
             <h1 className="mt-1.5 font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
               {isId ? 'Misi Radar & Penyelamatan Karhutla' : 'Radar Mission & Karhutla Rescue'}
             </h1>
-            <p className="mt-1 text-xs leading-relaxed text-[#dce8e0] sm:text-sm">
-              {isId
-                ? 'Dua misi konservasi interaktif yang terinspirasi dari observasi Bumi NASA — sapu kabut asap dengan radar SAR atau padamkan api gambut lewat aksi arcade klasik.'
-                : 'Two interactive conservation missions inspired by NASA Earth observation — sweep through wildfire smoke with SAR radar or extinguish peatland fires in classic arcade action.'}
-            </p>
           </div>
 
           {/* Compact Wildlife Dispatch Badge */}
@@ -253,7 +257,7 @@ export default function GameHubPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
         {/* 2 kartu game — gaya Field Board menu Map */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {GAMES.map((game) => (

@@ -547,3 +547,16 @@ textarea:focus-visible {
     color: #555555;
   }
 }
+
+@keyframes game-wallpaper-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 160px 160px;
+  }
+}
+
+.animate-game-wallpaper {
+  animation: game-wallpaper-drift 28s linear infinite;
+}
