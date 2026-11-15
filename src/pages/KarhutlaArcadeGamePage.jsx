@@ -1624,6 +1624,12 @@ export default function KarhutlaArcadeGamePage() {
             </button>
             <Link
               to="/game"
+              className="rounded-lg border border-[#e5c787]/50 bg-[#e5c787]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#f5e7c6] hover:bg-[#e5c787]/25"
+            >
+              {L('← Mission Hub', '← Pusat Misi')}
+            </Link>
+            <Link
+              to="/game"
               className="rounded-xl border-2 border-[#5c4033] bg-[#a8cf98] px-3 py-1.5 font-mono text-xs font-extrabold text-[#2f4528] shadow-[2px_2px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
             >
               {L('← Game Hub', '← Pilih Game')}
