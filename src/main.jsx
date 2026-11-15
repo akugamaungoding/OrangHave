@@ -8,6 +8,9 @@ import './styles/index.css';
 // Initialize i18n system
 import './i18n/index.js';
 
+// Point MapLibre at its web worker (needed for map & globe layers)
+import './maplibreSetup.js';
+
 import App from './App.jsx';
 
 const container = document.getElementById('root');

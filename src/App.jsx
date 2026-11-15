@@ -9,6 +9,10 @@ import GamePage from './pages/GamePage';
 import GameHubPage from './pages/GameHubPage';
 import MissionMapPage from './pages/MissionMapPage';
 import KarhutlaArcadeGamePage from './pages/KarhutlaArcadeGamePage';
+import StoryPage from './pages/StoryPage';
+import ReachPage from './pages/ReachPage';
+import WildlifePage from './pages/WildlifePage';
+import ActionPage from './pages/ActionPage';
 
 /**
  * ScrollToTop helper: scrolls window back to (0, 0) on route change
@@ -78,6 +82,10 @@ export default function App() {
           <Route path="/game/play" element={<GamePage />} />
           <Route path="/game/karhutla-arcade" element={<KarhutlaArcadeGamePage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/story" element={<StoryPage />} />
+          <Route path="/reach" element={<ReachPage />} />
+          <Route path="/wildlife" element={<WildlifePage />} />
+          <Route path="/action" element={<ActionPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>

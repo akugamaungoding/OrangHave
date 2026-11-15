@@ -1,16 +1,17 @@
 {
   "meta": {
     "title": "H.O.M.E. — The Disappearing Home",
-    "description": "When the forest burns, who loses their home? A storybook for Kalimantan's wildlife, and for the neighbors who breathe the smoke.",
+    "description": "When the forest burns, who loses their home? A storybook for Indonesia wildlife, and for the neighbors who breathe the smoke.",
     "tagline": "When the forest burns, who loses their home?",
     "expanded": "Habitat of Our Missing Endangered"
   },
   "nav": {
+    "story": "Interactive Story",
     "home": "Home",
     "game": "Rescue Missions",
     "map": "Map",
     "wildlife": "Wildlife",
-    "reach": "Neighbors",
+    "reach": "Cross-Border Haze",
     "action": "Take Action",
     "dashboard": "Your Home",
     "transparency": "Transparency",
