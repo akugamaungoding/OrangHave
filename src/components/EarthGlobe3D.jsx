@@ -583,7 +583,7 @@ export default function EarthGlobe3D({ fireEvents = [] }) {
         <div className="flex items-center gap-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-sky-400 animate-ping" />
           <span className="font-bold tracking-wider text-emerald-300 uppercase">
-            3D ORBITAL TELEMETRY // DANCING WITH THE SARs
+            3D ORBITAL TELEMETRY
           </span>
           <span className="hidden md:inline rounded bg-sky-500/20 border border-sky-400/30 px-2 py-0.5 text-[10px] text-sky-300">
             INTERACTIVE 3D GLOBE (DRAG TO ROTATE)

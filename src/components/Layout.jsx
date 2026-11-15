@@ -6,7 +6,7 @@ import NasaSplashScreen from './NasaSplashScreen';
 import MissionBriefModal from './MissionBriefModal';
 
 /**
- * Main Layout component for H.O.M.E. (NASA Space Apps "Dancing with the SARs" Edition)
+ * Main Layout component for H.O.M.E. ("Dancing with the SARs" Edition)
  * Provides:
  * - Cinematic Orbital & SAR Handshake Splash Screen (with replay capability)
  * - NASA Judge & Pitch Brief Modal

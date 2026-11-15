@@ -14,7 +14,7 @@ const BOOT_STAGES = [
   {
     id: 'sar',
     threshold: 28,
-    code: 'SAR-02 // DANCING WITH THE SARs',
+    code: 'SAR-02 // RADAR LOOKING GLASS',
     titleEn: 'Calibrating Synthetic Aperture Radar Looking Glass',
     titleId: 'Kalibrasi Lensa Radar Apertur Sintetis (SAR)',
     detailEn: 'Penetrating tropical monsoon clouds & peat smoke via C-Band & L-Band VV/VH backscatter...',
@@ -239,7 +239,7 @@ export default function NasaSplashScreen({ onComplete, forceOpen = false }) {
         <div className="flex items-center gap-2.5">
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
           <span className="tracking-widest uppercase font-semibold">
-            NASA SPACE APPS CHALLENGE // DANCING WITH THE SARs
+            H.O.M.E. // HABITAT OF OUR MISSING ENDANGERED
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -289,8 +289,8 @@ export default function NasaSplashScreen({ onComplete, forceOpen = false }) {
           </h1>
           <p className="font-serif text-lg sm:text-2xl text-emerald-100/90 italic">
             {locale === 'id'
-              ? 'Habitat of Our Missing Endangered — Menari Bersama Radar SAR & Bintang Satelit'
-              : 'Habitat of Our Missing Endangered — Dancing with the SARs over Borneo'}
+              ? 'Habitat of Our Missing Endangered'
+              : 'Habitat of Our Missing Endangered'}
           </p>
         </div>
 

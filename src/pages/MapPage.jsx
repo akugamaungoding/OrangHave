@@ -30,6 +30,7 @@ import {
   buildIndonesiaFireEvents,
   buildFireTriggeredWildlifePins,
   findNearestNdviPlot,
+  collapseAttribution,
 } from "../mapShared";
 
 function prewarmWaybackTiles(lat, lon, z = 10) {
@@ -300,7 +301,10 @@ export default function MapPage() {
   const [isPlayingPhase, setIsPlayingPhase] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [sarBand, setSarBand] = useState("l-band");
-  const [panelMinimized, setPanelMinimized] = useState(false);
+  // Di HP panel diperkecil dulu supaya peta tidak tertutup
+  const [panelMinimized, setPanelMinimized] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 640,
+  );
   const [notebookOpen, setNotebookOpen] = useState(false);
   const [activeBookmark, setActiveBookmark] = useState("cover");
   const [selectedFeature, setSelectedFeature] = useState(null);
@@ -792,21 +796,24 @@ export default function MapPage() {
       `;
 
       if (popupRef.current) popupRef.current.remove();
-      const popupInstance = new maplibregl.Popup({
-        offset: 38,
-        anchor: "bottom",
-        maxWidth: "300px",
-        className: "nasa-fire-popup",
-      })
-        .setLngLat([lon, lat])
-        .setHTML(popupContent)
-        .addTo(mapRef.current);
+      // Di HP popup dilewati: isinya sudah ada di buku catatan & layar terlalu sempit untuk keduanya
+      if (window.innerWidth >= 640) {
+        const popupInstance = new maplibregl.Popup({
+          offset: 38,
+          anchor: "bottom",
+          maxWidth: "300px",
+          className: "nasa-fire-popup",
+        })
+          .setLngLat([lon, lat])
+          .setHTML(popupContent)
+          .addTo(mapRef.current);
 
-      const popupEl = popupInstance.getElement();
-      if (popupEl) {
-        popupEl.style.zIndex = "100";
+        const popupEl = popupInstance.getElement();
+        if (popupEl) {
+          popupEl.style.zIndex = "100";
+        }
+        popupRef.current = popupInstance;
       }
-      popupRef.current = popupInstance;
 
       // Zoom mendekat ke lokasi titik api agar perubahan kondisi lahan historis vs sekarang terlihat jelas
       const currentZoom = mapRef.current.getZoom();
@@ -906,6 +913,7 @@ export default function MapPage() {
         }),
         "bottom-right",
       );
+      collapseAttribution(map);
 
       if (typeof ResizeObserver !== "undefined") {
         resizeObserver = new ResizeObserver(() => {
@@ -1641,7 +1649,7 @@ export default function MapPage() {
 
         {/* ==================== CARTOGRAPHER FIELD BOARD (Z-30) ==================== */}
         {!isEmbed && (
-          <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-30 flex w-[calc(100%-1.5rem)] max-w-[272px] flex-col">
+          <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-30 flex w-[calc(100%-9.5rem)] max-w-[272px] flex-col sm:w-[calc(100%-1.5rem)]">
             <div className="pointer-events-auto flex max-h-full flex-col overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_20px_48px_rgba(0,0,0,0.48),3px_3px_0_#ded4be]">
               {/* Forest Green & Brass Expedition Header */}
               <div className="relative shrink-0 border-b-2 border-[#c89d54]/70 bg-gradient-to-br from-[#163a28] via-[#1c4732] to-[#112d1f] px-3.5 py-2.5 text-[#faf6ee]">
@@ -2032,11 +2040,12 @@ export default function MapPage() {
         {!isEmbed && notebookOpen && (
           <div className="pointer-events-none absolute top-3 right-3 z-30 flex items-start">
             {/* Main Spiral Notebook Body */}
-            <div className="pointer-events-auto relative flex w-[calc(100vw-4.5rem)] max-w-[312px] rounded-l-lg rounded-r-2xl border border-[#d6cbb5] bg-[#faf6ee] text-[#1e2621] shadow-[0_20px_50px_rgba(0,0,0,0.55),4px_4px_0_#e5dcc8,8px_8px_0_rgba(20,28,24,0.35)]">
+            {/* HP: lebih sempit (tab penanda di kanan harus ikut muat) & tanpa jilid spiral */}
+            <div className="pointer-events-auto relative flex w-[calc(100vw-8rem)] max-w-[312px] rounded-l-lg rounded-r-2xl border border-[#d6cbb5] bg-[#faf6ee] text-[#1e2621] shadow-[0_20px_50px_rgba(0,0,0,0.55),4px_4px_0_#e5dcc8,8px_8px_0_rgba(20,28,24,0.35)] sm:w-[calc(100vw-4.5rem)]">
               {/* Spiral Wire Binding Spine (Left Edge) */}
               <div
                 aria-hidden="true"
-                className="flex w-6 shrink-0 flex-col items-center justify-evenly rounded-l-lg border-r border-[#dfd5c0] bg-[#f1eadc] py-3"
+                className="hidden w-6 shrink-0 flex-col items-center justify-evenly rounded-l-lg border-r border-[#dfd5c0] bg-[#f1eadc] py-3 sm:flex"
               >
                 {Array.from({ length: 10 }).map((_, idx) => (
                   <div
@@ -2051,7 +2060,7 @@ export default function MapPage() {
 
               {/* Ruled Notebook Page Content */}
               <div
-                className="max-h-[calc(100vh-155px)] min-w-0 flex-1 overflow-y-auto p-3.5"
+                className={`${playerOpen ? "max-h-[38vh]" : "max-h-[calc(100vh-155px)]"} min-w-0 flex-1 overflow-y-auto p-3.5 sm:max-h-[calc(100vh-155px)]`}
                 style={{
                   backgroundImage:
                     "repeating-linear-gradient(to bottom, transparent, transparent 23px, rgba(163, 149, 124, 0.16) 24px)",
@@ -3137,7 +3146,7 @@ export default function MapPage() {
 
               {/* Phase Description Strip */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e4dac5] bg-[#f1eadc] px-3.5 py-1.5 text-[10.5px] text-[#2f3933]">
-                <span className="min-w-0 flex-1 leading-snug">
+                <span className="min-w-0 basis-full leading-snug sm:flex-1 sm:basis-0">
                   {isId ? activePhaseConfig.desc : activePhaseConfig.descEn}
                 </span>
                 <div className="flex shrink-0 items-center gap-1.5">

@@ -1790,7 +1790,7 @@ function RadarMissionGame({ config }) {
               {isId ? 'Peta Misi' : 'Mission Map'}
             </Link>
             <span>/</span>
-            <span className="text-amber-300 font-bold">NASA NISAR: Dancing with the SARs</span>
+            <span className="text-amber-300 font-bold">NASA NISAR Radar</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="bg-red-950 px-2.5 py-1 rounded-full border border-red-700/60 text-[11px] text-red-300 font-bold">
@@ -1847,8 +1847,10 @@ function RadarMissionGame({ config }) {
           </div>
         )}
 
-        {/* CONTAINER UTAMA GAME */}
-        <div className="relative w-full rounded-3xl overflow-hidden border-2 border-emerald-700/70 shadow-2xl bg-[#030a05]">
+        {/* CONTAINER UTAMA GAME
+            HP: canvas di atas (tidak tertutup), kartu radar & dialog Ranger turun ke bawahnya.
+            ≥ sm: semua panel melayang di atas canvas seperti biasa. */}
+        <div className="relative flex w-full flex-col rounded-3xl overflow-hidden border-2 border-emerald-700/70 shadow-2xl bg-[#030a05] sm:block">
           {/* ── TOP HUD (❤️ 3 | 🐾 0/5 | ⏱️ 03:00 | ⏸️) ── */}
           <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
             {/* Kiri: Nyawa & Satwa Terselamatkan */}
@@ -1927,7 +1929,7 @@ function RadarMissionGame({ config }) {
           </div>
 
           {/* ── KARTU NISAR RADAR LAYER (DI POJOK KIRI ATAS) ── */}
-          <div className="absolute top-20 left-4 z-30 w-44 sm:w-48 bg-[#0a1c11]/90 backdrop-blur-md rounded-2xl border border-emerald-600/60 p-2.5 shadow-2xl text-xs font-sans text-cream-100">
+          <div className="order-2 relative z-30 mx-3 mb-3 bg-[#0a1c11]/90 backdrop-blur-md rounded-2xl border border-emerald-600/60 p-2.5 shadow-2xl text-xs font-sans text-cream-100 sm:absolute sm:top-20 sm:left-4 sm:m-0 sm:w-48">
             <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-emerald-800/80">
               <span className="font-bold text-[11px] text-emerald-300 flex items-center gap-1">
                 <span>🛰️</span> NISAR Radar Layer
@@ -1951,7 +1953,7 @@ function RadarMissionGame({ config }) {
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-3 gap-1.5 sm:block sm:space-y-1.5">
               <button
                 onClick={() => selectLayer('before')}
                 className={`w-full flex items-center gap-2 p-1.5 rounded-xl border text-left transition-all ${
@@ -1965,7 +1967,7 @@ function RadarMissionGame({ config }) {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold">Before (Pre-Fire)</div>
-                  <div className="text-[8px] opacity-60">Jan 2025 • Pristine</div>
+                  <div className="hidden text-[8px] opacity-60 sm:block">Jan 2025 • Pristine</div>
                 </div>
               </button>
 
@@ -1982,7 +1984,7 @@ function RadarMissionGame({ config }) {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold">After (SAR Backscatter)</div>
-                  <div className="text-[8px] opacity-60">{fireHotspots.length} Fire Scars Visible</div>
+                  <div className="hidden text-[8px] opacity-60 sm:block">{fireHotspots.length} Fire Scars Visible</div>
                 </div>
               </button>
 
@@ -1999,13 +2001,13 @@ function RadarMissionGame({ config }) {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold">Change Map (Delta)</div>
-                  <div className="text-[8px] opacity-60">Multi-Zone Burn Heatmap</div>
+                  <div className="hidden text-[8px] opacity-60 sm:block">Multi-Zone Burn Heatmap</div>
                 </div>
               </button>
 
               <button
                 onClick={() => selectLayer('optical')}
-                className={`w-full text-center py-1 rounded-lg text-[9px] font-mono transition-colors ${
+                className={`col-span-3 w-full text-center py-1 rounded-lg text-[9px] font-mono transition-colors ${
                   radarLayer === 'optical'
                     ? 'text-amber-300 font-bold'
                     : 'text-emerald-400/70 hover:text-emerald-300'
@@ -2015,8 +2017,8 @@ function RadarMissionGame({ config }) {
               </button>
             </div>
 
-            {/* Tombol Pancarkan Radar NISAR Menembus Kabut Asap */}
-            <div className="pt-2 border-t border-emerald-800/80 mt-2">
+            {/* Tombol Pancarkan Radar NISAR Menembus Kabut Asap (HP pakai tombol cepat di atas canvas) */}
+            <div className="hidden pt-2 border-t border-emerald-800/80 mt-2 sm:block">
               <button
                 onClick={triggerRadar}
                 disabled={radarCharges <= 0 || radarActive}
@@ -2049,8 +2051,19 @@ function RadarMissionGame({ config }) {
             </div>
           </div>
 
-          {/* ── TOMBOL CEPAT RADAR NISAR DI POJOK KANAN BAWAH (MOBILE & TOUCH FRIENDLY) ── */}
-          <div className="absolute bottom-4 right-4 z-30 flex flex-col items-end gap-1.5 pointer-events-auto">
+          {/* ── KANVAS GAME PETA HUTAN NYATA (1000 x 800) ── */}
+          <div className="order-1 relative w-full aspect-[5/4] sm:aspect-[16/10] overflow-hidden select-none">
+            <canvas
+              ref={canvasRef}
+              width={1000}
+              height={800}
+              onClick={handleMapClick}
+              className="w-full h-full object-cover cursor-crosshair"
+              title={isId ? 'Klik di mana saja pada peta untuk melangkah' : 'Click anywhere on map to walk'}
+            />
+
+          {/* ── TOMBOL CEPAT RADAR NISAR DI POJOK KANAN BAWAH CANVAS (MOBILE & TOUCH FRIENDLY) ── */}
+          <div className="absolute bottom-3 right-3 z-30 flex flex-col items-end gap-1.5 pointer-events-auto sm:bottom-4 sm:right-4">
             <button
               onClick={triggerRadar}
               disabled={radarCharges <= 0 || radarActive}
@@ -2074,21 +2087,10 @@ function RadarMissionGame({ config }) {
               </span>
             </button>
           </div>
-
-          {/* ── KANVAS GAME PETA HUTAN NYATA (1000 x 800) ── */}
-          <div className="relative w-full aspect-[5/4] sm:aspect-[16/10] overflow-hidden select-none">
-            <canvas
-              ref={canvasRef}
-              width={1000}
-              height={800}
-              onClick={handleMapClick}
-              className="w-full h-full object-cover cursor-crosshair"
-              title={isId ? 'Klik di mana saja pada peta untuk melangkah' : 'Click anywhere on map to walk'}
-            />
           </div>
 
           {/* ── DIALOG KOTAK RANGER GADIS BERANSEL DI POJOK BAWAH ── */}
-          <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-30 flex items-end gap-3 pointer-events-none">
+          <div className="order-3 relative z-30 mx-3 mb-3 flex items-end gap-3 pointer-events-none sm:absolute sm:bottom-4 sm:left-4 sm:right-auto sm:m-0 sm:max-w-md">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#0a1e12] border-2 border-amber-400 shadow-2xl flex items-center justify-center text-3xl sm:text-4xl filter drop-shadow-md shrink-0">
               👩‍🌾
             </div>

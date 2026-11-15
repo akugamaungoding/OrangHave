@@ -27,8 +27,8 @@ const LOGIC_TRAIL_STEPS = [
   {
     step: '01',
     badge: 'ORBITAL ACQUISITION',
-    titleEn: 'Dual-Constellation Pass ("Dancing with the SARs")',
-    titleId: 'Lintasan Konstelasi Ganda ("Dancing with the SARs")',
+    titleEn: 'Dual-Constellation Pass',
+    titleId: 'Lintasan Konstelasi Ganda',
     descEn:
       'NASA VIIRS (375m Thermal IR) detects radiant heat anomalies, while Sentinel-1 / NISAR (Synthetic Aperture Radar) transmits active microwave pulses that pierce 100% of Kalimantan smoke haze and tropical clouds day and night.',
     descId:
@@ -90,7 +90,7 @@ export default function SarLookingGlass({ fireCount = 42 }) {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 border border-sky-400/40 px-3.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider text-sky-300">
             <span className="h-2 w-2 rounded-full bg-sky-400 animate-ping" />
-            NASA Challenge Core // Dancing with the SARs
+            NASA Challenge Core
           </div>
           <h2 className="font-hand text-4xl sm:text-5xl font-bold text-cream-50 mt-2">
             {locale === 'id'

@@ -5,7 +5,7 @@ const CHAPTERS = [
   { id: 'chapter-cover', code: '01', labelEn: 'Cover & 3D Globe', labelId: 'Sampul & Bumi 3D' },
   { id: 'chapter-meet', code: '02', labelEn: 'Forest Kin (5 Species)', labelId: '5 Satwa Kunci' },
   { id: 'chapter-fire', code: '03', labelEn: 'Thermal Wave (VIIRS)', labelId: 'Gelombang Panas' },
-  { id: 'chapter-sar', code: '04', labelEn: 'Dancing with the SARs', labelId: 'Lensa Radar SAR' },
+  { id: 'chapter-sar', code: '04', labelEn: 'SAR Radar Lens', labelId: 'Lensa Radar SAR' },
   { id: 'chapter-evidence', code: '05', labelEn: 'Satellite Evidence', labelId: 'Bukti Satelit' },
   { id: 'chapter-choice', code: '06', labelEn: 'The Human Choice', labelId: 'Pilihan Manusia' },
   { id: 'chapter-return', code: '07', labelEn: 'Green Return', labelId: 'Pulihnya Kanopi' },

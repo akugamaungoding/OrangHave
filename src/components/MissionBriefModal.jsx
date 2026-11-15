@@ -5,8 +5,8 @@ import { useTranslation } from '../i18n';
 const WINNING_TRAITS = [
   {
     code: 'TRAIT 01 // MISSION ALIGNMENT',
-    titleEn: 'Dancing with the SARs: Multi-Sensor Space Application',
-    titleId: 'Dancing with the SARs: Aplikasi Antariksa Multi-Sensor',
+    titleEn: 'Multi-Sensor Space Application',
+    titleId: 'Aplikasi Antariksa Multi-Sensor',
     descEn:
       'Tropical peat fires in Kalimantan produce dense smoke haze under persistent monsoon clouds, blinding optical cameras. H.O.M.E. pairs Cloud-Penetrating Synthetic Aperture Radar (Sentinel-1 C-Band & NISAR L-Band VV/VH backscatter) with NASA FIRMS VIIRS (375m Thermal IR) & GIBS tiles to reveal peat moisture drop and canopy structure loss right through the smoke.',
     descId:
@@ -58,7 +58,7 @@ export default function MissionBriefModal({ isOpen, onClose, onReplaySplash }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="NASA Space Apps Finalist Mission Brief & Logic Trail"
+      aria-label="Mission Brief & Logic Trail"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-charcoal-950/80 backdrop-blur-md animate-fadeIn"
     >
       <div className="relative w-full max-w-5xl rounded-3xl border border-emerald-500/40 bg-gradient-to-b from-[#071612] via-[#0b1f1a] to-[#081317] text-cream-50 shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
@@ -70,10 +70,10 @@ export default function MissionBriefModal({ isOpen, onClose, onReplaySplash }) {
             </span>
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-sky-300 block">
-                NASA SPACE APPS CHALLENGE // JUDGE &amp; PITCH BRIEF
+                JUDGE &amp; PITCH BRIEF
               </span>
               <h2 className="font-hand text-2xl sm:text-3xl font-bold text-cream-50 leading-none">
-                H.O.M.E. — Dancing with the SARs Architecture
+                H.O.M.E. Architecture
               </h2>
             </div>
           </div>

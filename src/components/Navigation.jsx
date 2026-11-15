@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Link } from 'react-router-dom';
 import { t } from '../i18n';
 import SoundToggle from './SoundToggle';
@@ -48,16 +49,17 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
           className="group flex items-center gap-3 rounded-xl p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1b5e3a]"
           aria-label="H.O.M.E. — Return to homepage"
         >
-          {/* Forest & Globe Emblem */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#1b5e3a] to-[#123c26] text-[#faf6ee] ring-2 ring-[#c89d54]/45 shadow-sm transition-transform duration-200 group-hover:scale-105">
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="currentColor"
+          {/* Logo: maskot H.O.M.E. (sama dengan favicon) */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#faf6ee] ring-2 ring-[#c89d54]/45 shadow-sm transition-transform duration-200 group-hover:scale-105">
+            <img
+              src="/icons/icon-192.png"
+              alt=""
               aria-hidden="true"
-            >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-            </svg>
+              width="40"
+              height="40"
+              className="h-9 w-9 object-contain select-none"
+              draggable="false"
+            />
           </div>
 
           <div className="flex flex-col">
@@ -133,6 +135,13 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
         </div>
       </div>
 
+      {/*
+        Laci menu mobile dirender lewat portal ke <body>. Header memakai backdrop-blur, dan
+        backdrop-filter membuat elemen `fixed` di dalamnya diposisikan relatif ke header —
+        akibatnya laci yang tersembunyi (translate-x-full) ikut memperlebar halaman di HP.
+      */}
+      {createPortal(
+      <>
       {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
@@ -149,7 +158,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile Navigation"
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out xl:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out xl:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
           }`}
       >
         <div>
@@ -228,6 +237,9 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
           </p>
         </div>
       </aside>
+      </>,
+      document.body,
+      )}
     </header>
   );
 }

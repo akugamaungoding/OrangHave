@@ -15,6 +15,7 @@ import {
   buildFireTriggeredWildlifePins,
   haversineKm,
   findNearestNdviPlot,
+  collapseAttribution,
 } from "../mapShared";
 import ndviSamplesData from "../../ml/ndvi_samples.json";
 import { getFact, ML_PRIMARY_SOURCES } from "../nisarKnowledge";
@@ -68,7 +69,10 @@ export default function MissionMapPage() {
   const markersRef = useRef([]);
   const [mapReady, setMapReady] = useState(false);
   const [webGLError, setWebGLError] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(true);
+  // Di HP panel ditutup dulu supaya peta & pin misi langsung terlihat
+  const [panelOpen, setPanelOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 640,
+  );
   const [region, setRegion] = useState("indonesia");
   const [selected, setSelected] = useState(null);
 
@@ -209,6 +213,7 @@ export default function MissionMapPage() {
         }),
         "bottom-right",
       );
+      collapseAttribution(map);
       // Geser pusat peta ke kanan agar tidak tertutup panel kiri (layar lebar)
       if (mapContainerRef.current.clientWidth >= 768) {
         map.setPadding({ left: 300, top: 0, right: 0, bottom: 0 });

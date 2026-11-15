@@ -29,8 +29,17 @@ export const ML_SOURCES = Object.entries(RAW_SOURCES)
   .map(([path, raw]) => parseSource(path, raw))
   .sort((a, b) => a.file.localeCompare(b.file));
 
-/** Sumber berprioritas "Utama" (inti tema Dancing with the SARs). */
+/** Sumber berprioritas "Utama" (inti tema karhutla + radar SAR). */
 export const ML_PRIMARY_SOURCES = ML_SOURCES.filter((s) => s.priority === 'Utama');
+
+/** Riset & data nasional (ITENAS, BRIN) — file 12–17 di ml/source. */
+export const ML_NATIONAL_SOURCES = ML_SOURCES.filter((s) => /^1[2-7]-/.test(s.file));
+
+/** Ekosistem inovasi (BLOCK71, Innovation Factory, SKALA) — prioritas "Ekosistem". */
+export const ML_ECOSYSTEM_SOURCES = ML_SOURCES.filter((s) => s.priority === 'Ekosistem');
+
+/** Ambil satu sumber berdasarkan nama file. */
+export const getSource = (file) => ML_SOURCES.find((s) => s.file === file) || null;
 
 const rawByFile = Object.fromEntries(
   Object.entries(RAW_SOURCES).map(([path, raw]) => [fileName(path), raw]),
@@ -96,6 +105,74 @@ export const NISAR_FACTS = {
     quote: 'Post-fire burn severity mapping',
     id: 'NASA ARSET memberi pelatihan gratis untuk deteksi api & asap aktif hingga pemetaan tingkat keparahan bekas terbakar.',
     en: 'NASA ARSET offers free training from active fire and smoke detection to post-fire burn severity mapping.',
+  },
+
+  /* ── Riset & data nasional (ditambahkan 2026-11-15) ── */
+  itenasSar: {
+    file: '13-itenas-eprints-geodesi.md',
+    quote: 'X-, C-, and L-Band Polarimetric SAR Imaging',
+    id: 'Teknik Geodesi ITENAS memodelkan hamburan radar SAR polarimetrik X-, C-, dan L-band untuk membaca kanopi perkebunan sawit (Darmawan dkk., 2014).',
+    en: 'ITENAS Geodesy modelled X-, C-, and L-band polarimetric SAR scattering to read oil-palm canopies (Darmawan et al., 2014).',
+  },
+  itenasFusion: {
+    file: '13-itenas-eprints-geodesi.md',
+    quote: 'LANDSAT 8 AND ALOS PALSAR DATA',
+    id: 'Riset ITENAS–BRIN menggabungkan citra optik Landsat 8 dengan radar L-band ALOS PALSAR untuk menduga biomassa (Winarso, Vetrita, Purwanto & Darmawan, 2015).',
+    en: 'ITENAS–BRIN research fused Landsat 8 optical imagery with ALOS PALSAR L-band radar to estimate biomass (Winarso, Vetrita, Purwanto & Darmawan, 2015).',
+  },
+  itenasJournal: {
+    file: '12-itenas-reka-geomatika.md',
+    quote: 'survei dan pemetaan, sistem informasi geografis (SIG), pengindraan jauh',
+    id: 'Jurnal Reka Geomatika ITENAS memuat riset pengindraan jauh, SIG, dan deteksi perubahan tutupan lahan berbasis Landsat.',
+    en: "ITENAS' Reka Geomatika journal publishes remote sensing, GIS, and Landsat-based land-cover change research.",
+  },
+  brinHotspot: {
+    file: '14-brin-fire-hotspot.md',
+    quote: 'Total Hotspot 365 dalam 24 jam terakhir',
+    id: 'BRIN Fire Hotspot mencatat 365 titik panas di Indonesia dalam 24 jam — seluruhnya dari VIIRS (snapshot 15 Nov 2026).',
+    en: 'BRIN Fire Hotspot recorded 365 hotspots across Indonesia in 24 hours — all from VIIRS (snapshot 15 Nov 2026).',
+  },
+  brinRadarCatalog: {
+    file: '15-brin-katalog-inderaja.md',
+    quote: 'TerraSAR-X, Sentinel-1, ALOS PALSAR',
+    id: 'Katalog Inderaja BRIN menyediakan data radar TerraSAR-X, Sentinel-1, dan ALOS PALSAR, plus VIIRS, MODIS, dan Himawari-8.',
+    en: "BRIN's Inderaja catalogue holds TerraSAR-X, Sentinel-1, and ALOS PALSAR radar data, plus VIIRS, MODIS, and Himawari-8.",
+  },
+  brinOpenData: {
+    file: '15-brin-katalog-inderaja.md',
+    quote: 'Citra satelit resolusi rendah dan menengah dapat diperoleh oleh pengguna secara bebas',
+    id: 'Citra satelit resolusi rendah dan menengah di BRIN dapat diperoleh secara bebas — cukup untuk mengganti tabel NDVI contoh dengan statistik nyata.',
+    en: "Low- and medium-resolution imagery from BRIN is freely available — enough to replace the sample NDVI table with real statistics.",
+  },
+  spbnHotspot: {
+    file: '16-brin-spbn.md',
+    quote: 'Titik Panas (Hotspot)',
+    id: 'SPBN BRIN memasukkan Titik Panas (Hotspot) ke kategori Peringatan Dini Bencana — karhutla diperlakukan sebagai bencana yang bisa diantisipasi.',
+    en: "BRIN's SPBN lists Hotspots under Disaster Early Warning — wildfire treated as a disaster that can be anticipated.",
+  },
+  rinLulc: {
+    file: '17-brin-rin-dataverse.md',
+    quote: 'The 2016 map specifically captures major changes following the 2014–2015 fire events',
+    id: 'Dataset BRIN memetakan tutupan lahan gambut Kapuas-Barito (Kalteng) 1990–2022 pada 30 m; peta 2016 merekam perubahan besar setelah kebakaran 2014–2015.',
+    en: 'A BRIN dataset maps land cover across the Kapuas-Barito peatland (Central Kalimantan) 1990–2022 at 30 m; the 2016 map captures major changes after the 2014–2015 fires.',
+  },
+  block71: {
+    file: '18-block71-indonesia.md',
+    quote: "run with the Salim Group's Innovation Factory",
+    id: 'BLOCK71 telah mendukung 1.600+ startup sejak 2011; di Indonesia (Jakarta, Bandung, Yogyakarta) dijalankan bersama Innovation Factory.',
+    en: 'BLOCK71 has supported 1,600+ startups since 2011; in Indonesia (Jakarta, Bandung, Yogyakarta) it is run with Innovation Factory.',
+  },
+  innofactory: {
+    file: '19-innovation-factory.md',
+    quote: 'As the operator of BLOCK71 Indonesia',
+    id: 'Innovation Factory — operator BLOCK71 Indonesia — menjalankan pilar Build, Access, Sustain dengan 50+ mitra VC dan 200+ mitra korporasi & komunitas.',
+    en: 'Innovation Factory — operator of BLOCK71 Indonesia — runs Build, Access, Sustain with 50+ VC partners and 200+ corporate & community partners.',
+  },
+  skala: {
+    file: '20-skala-accelerator.md',
+    quote: "Indonesia's first metrics-driven and growth-focused pre-seed accelerator program",
+    id: 'SKALA adalah akselerator pre-seed berbasis metrik pertama di Indonesia (Innovation Factory): 1.500+ pendaftar, 50+ mentor.',
+    en: "SKALA is Indonesia's first metrics-driven pre-seed accelerator (Innovation Factory): 1,500+ applications, 50+ mentors.",
   },
 };
 

@@ -11,6 +11,21 @@ import {
 } from "./nasaScraper";
 
 /**
+ * MapLibre membuka kotak atribusi "compact" saat peta pertama dimuat. Di HP kotak itu
+ * menutupi tengah peta, jadi kita tutup (tinggal ikon ⓘ yang bisa diklik untuk membuka).
+ */
+export function collapseAttribution(map) {
+  const collapse = () => {
+    map
+      .getContainer()
+      .querySelectorAll(".maplibregl-ctrl-attrib.maplibregl-compact-show")
+      .forEach((el) => el.classList.remove("maplibregl-compact-show"));
+  };
+  map.once("load", collapse);
+  map.once("idle", collapse);
+}
+
+/**
  * Plot NDVI terdekat dari output pipeline ML (ml/pipeline.py → ml-scores.json / ml/ndvi_samples.json).
  * Mengembalikan plot + delta (after − before) + jarak km.
  */

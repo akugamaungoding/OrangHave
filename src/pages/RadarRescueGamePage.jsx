@@ -1308,7 +1308,7 @@ function RadarMissionGame({ config }) {
               {isId ? 'Beranda' : 'Home'}
             </Link>
             <span>/</span>
-            <span className="text-amber-300 font-bold">NASA NISAR: Dancing with the SARs</span>
+            <span className="text-amber-300 font-bold">NASA NISAR Radar</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="bg-red-950 px-2.5 py-1 rounded-full border border-red-700/60 text-[11px] text-red-300 font-bold">
