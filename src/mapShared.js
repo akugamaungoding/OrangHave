@@ -355,7 +355,7 @@ export const WILDLIFE_SPECIES_PROFILES = {
 };
 
 
-// Region Focus: 100% Indonesian Archipelago
+// Region Focus: 100% Indonesian Archipelago (overview + per-island)
 export const REGION_COORDINATES = {
   indonesia: {
     center: [117.2, -2.4],
@@ -364,26 +364,47 @@ export const REGION_COORDINATES = {
     bearing: 0,
     label: "🇮🇩 Indonesia",
   },
+  sumatera: {
+    center: [101.6, -0.6],
+    zoom: 5.7,
+    pitch: 0,
+    bearing: 0,
+    label: "🐅 Sumatra",
+  },
   kalimantan: {
-    center: [113.8, -1.3],
+    center: [113.8, -1.2],
     zoom: 5.9,
     pitch: 0,
     bearing: 0,
     label: "🦧 Kalimantan",
   },
-  sumatera: {
-    center: [102.2, -0.8],
-    zoom: 5.5,
+  jawa: {
+    center: [110.0, -7.3],
+    zoom: 6.6,
     pitch: 0,
     bearing: 0,
-    label: "🐅 Sumatra",
+    label: "🦏 Java",
   },
-  timur: {
-    center: [122.5, -5.2],
-    zoom: 5.0,
+  sulawesi: {
+    center: [120.8, -1.8],
+    zoom: 6.2,
     pitch: 0,
     bearing: 0,
-    label: "🦜 Java & East",
+    label: "🐒 Sulawesi",
+  },
+  nusa_tenggara: {
+    center: [119.5, -8.6],
+    zoom: 6.3,
+    pitch: 0,
+    bearing: 0,
+    label: "🦎 Bali & Nusa",
+  },
+  papua: {
+    center: [137.8, -4.2],
+    zoom: 5.9,
+    pitch: 0,
+    bearing: 0,
+    label: "🦜 Papua",
   },
 };
 

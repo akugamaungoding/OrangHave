@@ -13,7 +13,7 @@ const STORAGE_KEY = 'home_forest_sound_enabled';
  * @param {string} [props.audioSrc] - Optional path to forest audio file (e.g. /assets/audio/forest.mp3)
  * @param {string} [props.className='']
  */
-export default function SoundToggle({ audioSrc, className = '' }) {
+export default function SoundToggle({ audioSrc, className = '', inline = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
 
@@ -187,17 +187,19 @@ export default function SoundToggle({ audioSrc, className = '' }) {
   }, []);
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+    <div className={`${inline ? 'relative' : 'fixed bottom-6 right-6 z-50'} ${className}`}>
       <button
         type="button"
         onClick={toggleSound}
         disabled={!isSupported}
         aria-pressed={isPlaying}
         aria-label={isPlaying ? 'Mute forest ambience' : 'Play forest ambience'}
-        className={`group relative flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-lg transition-all duration-300 focus:outline-none focus:ring-3 focus:ring-[#D4A574]/60 ${
+        className={`group relative flex items-center justify-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#c89d54]/60 cursor-pointer ${
+          inline ? 'h-9 w-9 border' : 'h-12 w-12 border-2 shadow-lg'
+        } ${
           isPlaying
-            ? 'border-[#4A7C59] bg-[#4A7C59] text-[#FFFDF7] shadow-[0_4px_16px_rgba(74,124,89,0.4)]'
-            : 'border-[#D4A574]/60 bg-[#FDF6E3] text-[#4A3E39] hover:border-[#D4A574] hover:bg-[#F5E6C8] shadow-[0_4px_12px_rgba(212,165,116,0.25)]'
+            ? 'border-[#1b5e3a] bg-[#18442e] text-[#faf6ee] shadow-sm'
+            : 'border-[#d6c7ac] bg-[#fdfaf2] text-[#4a3e39] hover:border-[#b9a47e] hover:bg-[#f2e8d4]'
         }`}
       >
         {/* Pulsing halo when sound is active */}
@@ -246,7 +248,11 @@ export default function SoundToggle({ audioSrc, className = '' }) {
         )}
 
         {/* Tooltip on hover */}
-        <span className="pointer-events-none absolute right-14 whitespace-nowrap rounded-md bg-[#2C2C2C] px-2.5 py-1 text-xs font-medium text-[#FDF6E3] opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100">
+        <span
+          className={`pointer-events-none absolute whitespace-nowrap rounded-md bg-[#2C2C2C] px-2.5 py-1 text-xs font-medium text-[#FDF6E3] opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100 ${
+            inline ? 'top-11 right-0' : 'right-14'
+          }`}
+        >
           {isPlaying ? 'Forest Ambience: On' : 'Forest Ambience: Off'}
         </span>
       </button>

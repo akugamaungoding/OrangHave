@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import Footer from './Footer';
 import NasaSplashScreen from './NasaSplashScreen';
@@ -17,6 +17,8 @@ import MissionBriefModal from './MissionBriefModal';
  * - Comprehensive footer with partner attributions and donation disclaimers
  */
 export default function Layout({ children }) {
+  const { pathname } = useLocation();
+  const hideFooter = pathname === '/map' || pathname.startsWith('/map/');
   const [forceSplash, setForceSplash] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
 
@@ -62,8 +64,8 @@ export default function Layout({ children }) {
         {children || <Outlet />}
       </main>
 
-      {/* Storybook Footer */}
-      <Footer />
+      {/* Storybook Footer (hidden on /map for full-viewport map experience) */}
+      {!hideFooter && <Footer />}
     </div>
   );
 }

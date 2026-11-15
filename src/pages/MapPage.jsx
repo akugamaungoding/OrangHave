@@ -280,11 +280,18 @@ export default function MapPage() {
   const L = (en, id) => (isId ? id : en);
 
   const [searchParams] = useSearchParams();
+  const mapRootRef = useRef(null);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
+  const userMarkerRef = useRef(null);
 
   const isEmbed = searchParams.get("embed") === "true";
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [locatingUser, setLocatingUser] = useState(false);
+  const [userCoords, setUserCoords] = useState(null);
+  const [locationError, setLocationError] = useState(null);
 
   const [selectedRegion, setSelectedRegion] = useState("indonesia");
   const [basemapMode, setBasemapMode] = useState("satellite");
@@ -867,6 +874,22 @@ export default function MapPage() {
       });
 
       map.addControl(
+        new maplibregl.FullscreenControl({
+          container: mapRootRef.current || undefined,
+        }),
+        "bottom-right",
+      );
+
+      map.addControl(
+        new maplibregl.GeolocateControl({
+          positionOptions: { enableHighAccuracy: true },
+          trackUserLocation: true,
+          showUserHeading: true,
+        }),
+        "bottom-right",
+      );
+
+      map.addControl(
         new maplibregl.NavigationControl({
           showCompass: true,
           showZoom: true,
@@ -1427,10 +1450,118 @@ export default function MapPage() {
     }
   };
 
+  useEffect(() => {
+    const syncFullscreen = () => {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      setIsFullscreen(Boolean(fsEl));
+      requestAnimationFrame(() => mapRef.current?.resize());
+    };
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    document.addEventListener("webkitfullscreenchange", syncFullscreen);
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreen);
+      document.removeEventListener("webkitfullscreenchange", syncFullscreen);
+    };
+  }, []);
+
+  const handleToggleFullscreen = async () => {
+    const el = mapRootRef.current;
+    if (!el) return;
+    try {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+        setIsFullscreen(false);
+      } else if (el.requestFullscreen) {
+        await el.requestFullscreen();
+        setIsFullscreen(true);
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        setIsFullscreen((v) => !v);
+      }
+    } catch {
+      setIsFullscreen((v) => !v);
+    }
+    requestAnimationFrame(() => mapRef.current?.resize());
+  };
+
+  useEffect(() => {
+    return () => {
+      userMarkerRef.current?.remove();
+    };
+  }, []);
+
+  const handleLocateUser = () => {
+    if (!navigator.geolocation) {
+      setLocationError(
+        L("Geolocation is not supported in this browser.", "Geolokasi tidak didukung di browser ini."),
+      );
+      return;
+    }
+    setLocatingUser(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        setLocatingUser(false);
+        setUserCoords({ lat: latitude, lon: longitude, accuracy: Math.round(accuracy) });
+
+        if (mapRef.current) {
+          userMarkerRef.current?.remove();
+          const el = document.createElement("div");
+          el.className = "relative flex items-center justify-center";
+          el.innerHTML = `
+            <span style="position:absolute;width:28px;height:28px;border-radius:9999px;background:rgba(56,189,248,0.35);animation:ping 1.6s cubic-bezier(0,0,0.2,1) infinite;"></span>
+            <span style="width:14px;height:14px;border-radius:9999px;background:#0284c7;border:2.5px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.45);"></span>
+          `;
+          const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([longitude, latitude])
+            .setPopup(
+              new maplibregl.Popup({ offset: 14, closeButton: true }).setHTML(
+                `<div style="padding:10px 12px;font-family:ui-monospace,monospace;font-size:11px;color:#1e293b;">
+                  <div style="font-weight:800;color:#0369a1;margin-bottom:2px;">📍 ${L("Your Current Location", "Lokasi Anda Saat Ini")}</div>
+                  <div>${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°</div>
+                  <div style="font-size:10px;color:#64748b;margin-top:2px;">±${Math.round(accuracy)} m</div>
+                </div>`,
+              ),
+            )
+            .addTo(mapRef.current);
+          userMarkerRef.current = marker;
+
+          mapRef.current.flyTo({
+            center: [longitude, latitude],
+            zoom: 11,
+            duration: 1100,
+          });
+          marker.togglePopup();
+        }
+      },
+      (err) => {
+        setLocatingUser(false);
+        setLocationError(
+          err.code === 1
+            ? L("Location permission denied.", "Izin lokasi ditolak.")
+            : L("Unable to get current location.", "Gagal mendapatkan lokasi saat ini."),
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  };
+
   return (
     <div
-      className={`relative w-full ${isEmbed ? "h-screen" : "h-[calc(100vh-64px)] min-h-[680px]"
-        } overflow-hidden flex flex-col bg-[#030b14]`}
+      ref={mapRootRef}
+      className={`w-full overflow-hidden flex flex-col bg-[#030b14] ${
+        isFullscreen
+          ? "fixed inset-0 z-50 h-screen w-screen"
+          : `relative ${isEmbed ? "h-screen" : "h-[calc(100vh-64px)] min-h-[520px]"}`
+      }`}
     >
       {webGLError && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#030b14] p-6 text-cream-100">
@@ -1447,10 +1578,7 @@ export default function MapPage() {
       )}
 
       {/* MAIN MAP CANVAS */}
-      <div
-        className="relative w-full flex-1"
-        style={{ minHeight: "560px", height: "100%" }}
-      >
+      <div className="relative min-h-0 w-full flex-1">
         {/* Ensure Popup stays above all Fire Pins (z-index: 100), and Fire Pins never escape the map canvas */}
         <style>{`
           .maplibregl-popup {
@@ -1513,10 +1641,10 @@ export default function MapPage() {
 
         {/* ==================== CARTOGRAPHER FIELD BOARD (Z-30) ==================== */}
         {!isEmbed && (
-          <div className="pointer-events-none absolute top-3 left-3 z-30 flex w-[calc(100%-1.5rem)] max-w-[272px] flex-col">
-            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_20px_48px_rgba(0,0,0,0.48),3px_3px_0_#ded4be]">
+          <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-30 flex w-[calc(100%-1.5rem)] max-w-[272px] flex-col">
+            <div className="pointer-events-auto flex max-h-full flex-col overflow-hidden rounded-2xl border border-[#cbbba0] bg-[#f8f3e8] text-[#1d2621] shadow-[0_20px_48px_rgba(0,0,0,0.48),3px_3px_0_#ded4be]">
               {/* Forest Green & Brass Expedition Header */}
-              <div className="relative border-b-2 border-[#c89d54]/70 bg-gradient-to-br from-[#163a28] via-[#1c4732] to-[#112d1f] px-3.5 py-2.5 text-[#faf6ee]">
+              <div className="relative shrink-0 border-b-2 border-[#c89d54]/70 bg-gradient-to-br from-[#163a28] via-[#1c4732] to-[#112d1f] px-3.5 py-2.5 text-[#faf6ee]">
                 <span className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
                 <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#d8b26a]/70 shadow-xs" />
 
@@ -1536,6 +1664,41 @@ export default function MapPage() {
                     </span>
                     <button
                       type="button"
+                      onClick={handleLocateUser}
+                      disabled={locatingUser}
+                      title={L("My Current Location", "Lokasi Saya Saat Ini")}
+                      aria-label={L("My Current Location", "Lokasi Saya Saat Ini")}
+                      className={`cursor-pointer flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold transition-colors ${
+                        userCoords
+                          ? "border-[#7dd3fc] bg-[#0284c7] text-white hover:bg-[#0369a1]"
+                          : "border-white/20 bg-white/10 text-[#faf6ee] hover:bg-white/20"
+                      } ${locatingUser ? "animate-pulse opacity-75" : ""}`}
+                    >
+                      {locatingUser ? "…" : "◎"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleToggleFullscreen}
+                      title={
+                        isFullscreen
+                          ? L("Exit Full Screen", "Keluar Layar Penuh")
+                          : L("View Full Screen", "Lihat Layar Penuh")
+                      }
+                      aria-label={
+                        isFullscreen
+                          ? L("Exit Full Screen", "Keluar Layar Penuh")
+                          : L("View Full Screen", "Lihat Layar Penuh")
+                      }
+                      className={`cursor-pointer flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold transition-colors ${
+                        isFullscreen
+                          ? "border-[#e5c787] bg-[#e5c787] text-[#112d1f] hover:bg-[#f0d8a4]"
+                          : "border-white/20 bg-white/10 text-[#faf6ee] hover:bg-white/20"
+                      }`}
+                    >
+                      {isFullscreen ? "✕" : "⛶"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setPanelMinimized((v) => !v)}
                       title={
                         panelMinimized ? "Buka Papan Kontrol" : "Perkecil Papan"
@@ -1548,48 +1711,72 @@ export default function MapPage() {
                 </div>
               </div>
 
+              {locationError && (
+                <div className="flex items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-medium text-amber-900">
+                  <span>📍 {locationError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setLocationError(null)}
+                    className="cursor-pointer font-bold text-amber-700 hover:text-amber-950"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
               {!panelMinimized && (
                 <div
-                  className="divide-y divide-[#dfd4be] px-3.5 py-1"
+                  className="divide-y divide-[#dfd4be] overflow-y-auto px-3.5 py-1"
                   style={{
                     backgroundImage:
                       "radial-gradient(rgba(140, 125, 98, 0.12) 1px, transparent 1px)",
                     backgroundSize: "14px 14px",
                   }}
                 >
-                  {/* 1. Wilayah Fokus */}
+                  {/* 1. Wilayah Fokus (Per Pulau) */}
                   <div className="py-2.5">
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="font-mono text-[8.5px] font-bold tracking-[0.16em] text-[#5c665f] uppercase">
-                        {L("Monitored Region", "Wilayah Pantau")}
+                        {L("Monitored Island", "Pantau Pulau")}
                       </span>
-                      <span className="font-mono text-[8.5px] font-semibold text-[#1b5e3a]">
+                      <button
+                        type="button"
+                        onClick={() => handleRegionChange("indonesia")}
+                        className={`cursor-pointer font-mono text-[8.5px] font-semibold transition-colors ${
+                          selectedRegion === "indonesia"
+                            ? "text-[#1b5e3a] underline underline-offset-2"
+                            : "text-[#5c665f] hover:text-[#1b5e3a]"
+                        }`}
+                        title={L("Reset to all islands", "Tampilkan semua pulau")}
+                      >
                         {L("Archipelago", "Nusantara")}
-                      </span>
+                      </button>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                      {Object.entries(REGION_COORDINATES).map(([key, cfg]) => {
-                        const active = selectedRegion === key;
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => handleRegionChange(key)}
-                            className={`cursor-pointer flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-all ${
-                              active
-                                ? "border-[#1b5e3a] bg-[#18442e] font-bold text-[#faf6ee] shadow-sm"
-                                : "border-[#dcd0b8] bg-white/75 font-semibold text-[#333d37] hover:border-[#b7a78a] hover:bg-white"
-                            }`}
-                          >
-                            <span className="truncate">{cfg.label}</span>
-                            <span
-                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                active ? "bg-[#e5c787]" : "bg-[#c7bba2]"
+                      {Object.entries(REGION_COORDINATES)
+                        .filter(([key]) => key !== "indonesia")
+                        .map(([key, cfg]) => {
+                          const active = selectedRegion === key;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => handleRegionChange(key)}
+                              className={`cursor-pointer flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-all ${
+                                active
+                                  ? "border-[#1b5e3a] bg-[#18442e] font-bold text-[#faf6ee] shadow-sm"
+                                  : "border-[#dcd0b8] bg-white/75 font-semibold text-[#333d37] hover:border-[#b7a78a] hover:bg-white"
                               }`}
-                            />
-                          </button>
-                        );
-                      })}
+                            >
+                              <span className="truncate">{cfg.label}</span>
+                              <span
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                  active ? "bg-[#e5c787]" : "bg-[#c7bba2]"
+                                }`}
+                              />
+                            </button>
+                          );
+                        })}
                     </div>
                   </div>
 
@@ -2971,9 +3158,9 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* Bottom Legend Bar */}
+      {/* Bottom Legend Bar (Navy Blue) */}
       {!isEmbed && (
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-charcoal-800 bg-charcoal-950 px-4 py-2 text-xs text-cream-200">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#1e3a5f] bg-[#0b1f3a] px-4 py-2 text-xs text-slate-100">
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-2 font-semibold">
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white bg-[#983226] text-[10px] text-white">
@@ -2999,7 +3186,7 @@ export default function MapPage() {
           </div>
 
           <div className="max-w-md">
-            <DonationDisclaimer compact className="text-cream-400" />
+            <DonationDisclaimer compact className="text-sky-200/80" />
           </div>
         </div>
       )}
