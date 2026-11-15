@@ -6,7 +6,9 @@ import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import MapPage from './pages/MapPage';
 import GamePage from './pages/GamePage';
+import GameHubPage from './pages/GameHubPage';
 import MissionMapPage from './pages/MissionMapPage';
+import KarhutlaArcadeGamePage from './pages/KarhutlaArcadeGamePage';
 
 /**
  * ScrollToTop helper: scrolls window back to (0, 0) on route change
@@ -70,8 +72,11 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/game" element={<MissionMapPage />} />
+          {/* Pusat Misi: pilih game → peta misi Radar Rescue / Arcade Bom Air */}
+          <Route path="/game" element={<GameHubPage />} />
+          <Route path="/game/radar-rescue" element={<MissionMapPage />} />
           <Route path="/game/play" element={<GamePage />} />
+          <Route path="/game/karhutla-arcade" element={<KarhutlaArcadeGamePage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

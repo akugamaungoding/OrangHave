@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from '../i18n';
 import SdgMark from '../components/SdgMark';
 import { getFact, ML_SOURCES } from '../nisarKnowledge';
@@ -10,44 +10,256 @@ import {
   formatClock,
 } from '../gameDifficulty';
 
-const GAMES = [
+/* ── Web Audio Procedural Sound System ── */
+class GameAudio {
+  static ctx = null;
+
+  static init() {
+    if (!GameAudio.ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) GameAudio.ctx = new AudioCtx();
+    }
+  }
+
+  static playFootstep() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const osc = GameAudio.ctx.createOscillator();
+      const gain = GameAudio.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(100, GameAudio.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(35, GameAudio.ctx.currentTime + 0.07);
+      gain.gain.setValueAtTime(0.04, GameAudio.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, GameAudio.ctx.currentTime + 0.07);
+      osc.connect(gain);
+      gain.connect(GameAudio.ctx.destination);
+      osc.start();
+      osc.stop(GameAudio.ctx.currentTime + 0.07);
+    } catch {
+      // Audio not permitted
+    }
+  }
+
+  static playFoundAnimal() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const osc = GameAudio.ctx.createOscillator();
+      const gain = GameAudio.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, GameAudio.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(640, GameAudio.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.15, GameAudio.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, GameAudio.ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(GameAudio.ctx.destination);
+      osc.start();
+      osc.stop(GameAudio.ctx.currentTime + 0.35);
+    } catch {
+      // Audio failed
+    }
+  }
+
+  static playRescueChime() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const osc = GameAudio.ctx.createOscillator();
+        const gain = GameAudio.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const startTime = GameAudio.ctx.currentTime + idx * 0.09;
+        gain.gain.setValueAtTime(0.15, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+        osc.connect(gain);
+        gain.connect(GameAudio.ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.3);
+      });
+    } catch {
+      // Audio failed
+    }
+  }
+
+  static playRadarPulse() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const osc = GameAudio.ctx.createOscillator();
+      const gain = GameAudio.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, GameAudio.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, GameAudio.ctx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.12, GameAudio.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, GameAudio.ctx.currentTime + 0.7);
+      osc.connect(gain);
+      gain.connect(GameAudio.ctx.destination);
+      osc.start();
+      osc.stop(GameAudio.ctx.currentTime + 0.7);
+    } catch {
+      // Audio failed
+    }
+  }
+
+  static playDangerWarning() {
+    try {
+      GameAudio.init();
+      if (!GameAudio.ctx) return;
+      if (GameAudio.ctx.state === 'suspended') GameAudio.ctx.resume();
+      const osc = GameAudio.ctx.createOscillator();
+      const gain = GameAudio.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, GameAudio.ctx.currentTime);
+      osc.frequency.setValueAtTime(170, GameAudio.ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.12, GameAudio.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, GameAudio.ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(GameAudio.ctx.destination);
+      osc.start();
+      osc.stop(GameAudio.ctx.currentTime + 0.25);
+    } catch {
+      // Audio failed
+    }
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   BANYAK TITIK KEBAKARAN KARHUTLA DI BERBAGAI PENJURU HUTAN (MULTIPLE HOTSPOTS)
+   ────────────────────────────────────────────────────────────────────────── */
+const DEFAULT_FIRE_HOTSPOTS = [
+  { id: 'f1', x: 530, y: 195, rx: 85, ry: 55, name: 'Karhutla Kubah Gambut Tengah', nameEn: 'Central Peat Dome Wildfire', intensity: 1.1 },
+  { id: 'f2', x: 740, y: 150, rx: 65, ry: 48, name: 'Titik Api Kanopi Meranti Timur', nameEn: 'Eastern Meranti Canopy Hotspot', intensity: 0.9 },
+  { id: 'f3', x: 730, y: 470, rx: 60, ry: 45, name: 'Bara Api Semak Sisi Timur', nameEn: 'Eastern Shrubland Embers', intensity: 0.95 },
+  { id: 'f4', x: 370, y: 580, rx: 70, ry: 50, name: 'Kebakaran Rawa Gambut Selatan', nameEn: 'Southern Peat Swamp Fire', intensity: 1.05 },
+  { id: 'f5', x: 220, y: 390, rx: 62, ry: 46, name: 'Api Tajuk Belukar Barat', nameEn: 'Western Thicket Crown Fire', intensity: 0.85 },
+  { id: 'f6', x: 600, y: 730, rx: 55, ry: 40, name: 'Rekahan Bara Bawah Tanah Tenggara', nameEn: 'Southeast Underground Ember Rift', intensity: 0.8 },
+];
+
+/* ──────────────────────────────────────────────────────────────────────────
+   5 SATWA LIAR DENGAN LOKASI HILANG & HABITAT ALAMI BERBEDA (BUKAN DI SUNGAI)
+   ────────────────────────────────────────────────────────────────────────── */
+const WILDLIFE_MISSIONS = [
   {
-    id: 'radar-rescue',
-    path: '/game/radar-rescue',
-    badgeEn: 'GAME 01 • SAR STEALTH RADAR',
-    badgeId: 'GAME 01 • RADAR STEALTH SAR',
-    titleEn: 'SAR Radar Rescue',
-    titleId: 'Misi Radar Penyelamatan',
-    subtitleEn: 'Sweep through thick wildfire smoke using Sentinel-1 SAR radar pulses to locate and rescue endangered wildlife.',
-    subtitleId: 'Sisir kabut asap karhutla menggunakan pulsa radar SAR Sentinel-1 untuk menemukan dan menyelamatkan satwa terancam.',
-    tagsEn: ['Sentinel-1 SAR Pulse', 'Stealth & Thermal Fog', '3 Forest Biomes'],
-    tagsId: ['Pulsa Radar SAR', 'Kabut Asap & Termal', '3 Bioma Hutan'],
-    emoji: '📡',
-    accent: 'from-emerald-950 via-teal-950 to-slate-950',
-    border: 'border-emerald-500/40 hover:border-emerald-400',
-    pillBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
-    ctaBg: 'bg-emerald-500 hover:bg-emerald-400 text-slate-950',
-    ctaEn: 'Play SAR Radar Rescue',
-    ctaId: 'Mainkan SAR Radar Rescue',
+    id: 'kancil',
+    name: 'Kecil si Kancil',
+    nameEn: 'Little Deer',
+    species: 'Lesser Mouse Deer (Tragulus kanchil)',
+    emoji: '🦌',
+    lostPos: { x: 420, y: 440 },
+    habitat: {
+      name: 'Semak Riparian Rindang Barat Laut',
+      nameEn: 'Northwest Riparian Shrubland',
+      desc: 'Semak hijau lembap teduh tempat kancil bersembunyi dari panas api.',
+      descEn: 'Shady, moist green shrubs where the mouse deer hides from the heat of the fire.',
+      icon: '🌿',
+      x: 160,
+      y: 200,
+      radius: 46,
+      color: '#34d399',
+    },
+    cryId: 'Hutan tempat tinggalku terkepung asap api... tolong temukan aku dan tuntun aku ke semak rindang sejuk!',
+    cryEn: 'My forest home is surrounded by smoke... please find me and guide me to the cool green shrubland!',
+    storyEpilogueId: 'Kecil kini merumput tenang bersama kawanannya di semak riparian yang sejuk dan terlindung.',
+    storyEpilogueEn: 'Little Deer is now grazing peacefully with its herd in the cool, sheltered riverine shrubs.',
   },
   {
-    id: 'karhutla-arcade',
-    path: '/game/karhutla-arcade',
-    badgeEn: 'GAME 02 • CRAZY ARCADE STYLE',
-    badgeId: 'GAME 02 • GAYA CRAZY ARCADE',
-    titleEn: 'Karhutla Water-Bomb Arcade',
-    titleId: 'Arcade Bom Air Karhutla',
-    subtitleEn: 'Classic grid-based Crazy Arcade action! Drop water bombs, blast burning peat blocks, dodge fireballs, and save trapped animals.',
-    subtitleId: 'Aksi grid ala Crazy Arcade klasik! Pasang bom air, padamkan blok gambut terbakar, hindari bola api, dan bebaskan satwa.',
-    tagsEn: ['Water-Bomb Grid', 'Power-ups & Bosses', '3 Karhutla Stages'],
-    tagsId: ['Grid Bom Air', 'Power-up & Musuh Api', '3 Stage Karhutla'],
-    emoji: '💦',
-    accent: 'from-amber-950 via-orange-950 to-slate-950',
-    border: 'border-amber-500/40 hover:border-amber-400',
-    pillBg: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
-    ctaBg: 'bg-amber-400 hover:bg-amber-300 text-slate-950',
-    ctaEn: 'Play Water-Bomb Arcade',
-    ctaId: 'Mainkan Arcade Bom Air',
+    id: 'tuki',
+    name: 'Tuki si Orangutan',
+    nameEn: 'Tuki the Orangutan',
+    species: 'Bornean Orangutan (Pongo pygmaeus)',
+    emoji: '🦧',
+    lostPos: { x: 330, y: 270 },
+    habitat: {
+      name: 'Kanopi Pohon Ulin Tenggara',
+      nameEn: 'Southeast Ironwood Canopy',
+      desc: 'Tajuk pohon ulin purba yang tinggi dan aman dari kebakaran gambut bawah.',
+      descEn: 'The tall crowns of ancient ironwood trees, safe from the peat fires below.',
+      icon: '🌳',
+      x: 650,
+      y: 630,
+      radius: 48,
+      color: '#10b981',
+    },
+    cryId: 'Asap pekat membakar tajuk pohonku! Tolong temukan aku dan bawa aku ke kanopi ulin yang rimbun!',
+    cryEn: 'Thick smoke burns my nest canopy! Please find me and guide me to the tall ironwood trees!',
+    storyEpilogueId: 'Tuki berpelukan erat dengan Ibunya di dahan kanopi pohon ulin purba yang bebas dari asap pekat.',
+    storyEpilogueEn: 'Tuki safely reunited with his Mother in a towering ironwood canopy free from suffocating smoke.',
+  },
+  {
+    id: 'liku',
+    name: 'Liku si Trenggiling',
+    nameEn: 'Liku the Pangolin',
+    species: 'Sunda Pangolin (Manis javanica)',
+    emoji: '🦎',
+    lostPos: { x: 640, y: 440 },
+    habitat: {
+      name: 'Liang Bukit Lembap Barat Daya',
+      nameEn: 'Southwest Moist Hill Burrow',
+      desc: 'Gundukan tanah gambut lembap yang sejuk bebas dari bara api bawah tanah.',
+      descEn: 'Cool, moist peat mounds free from underground embers.',
+      icon: '🪨',
+      x: 180,
+      y: 660,
+      radius: 48,
+      color: '#06b6d4',
+    },
+    cryId: 'Tanah sarangku memanas membara! Aku butuh bantuanmu menuju bukit tanah lembap yang sejuk!',
+    cryEn: 'The peat ground under me is boiling hot! Guide me to the cool moist highland burrow!',
+    storyEpilogueId: 'Liku meringkuk hangat dan damai di liang tanah gambut basah yang tidak terjangkau bara karhutla.',
+    storyEpilogueEn: 'Liku is curled up peacefully inside a moist peat mound burrow, safe from subterranean embers.',
+  },
+  {
+    id: 'madu',
+    name: 'Madu si Beruang Madu',
+    nameEn: 'Madu the Sun Bear',
+    species: 'Sun Bear (Helarctos malayanus)',
+    emoji: '🐻',
+    lostPos: { x: 720, y: 340 },
+    habitat: {
+      name: 'Pohon Sarang Lebah Selatan',
+      nameEn: 'Southern Giant Honey Hollow Tree',
+      desc: 'Pohon tua berongga raksasa yang kaya sarang lebah hutan dan terlindung dari api.',
+      descEn: 'A giant old hollow tree full of wild beehives and sheltered from the flames.',
+      icon: '🍯',
+      x: 480,
+      y: 680,
+      radius: 48,
+      color: '#f59e0b',
+    },
+    cryId: 'Pohon maduku hangus dilalap api tajuk! Tolong temukan aku dan tuntun ke pohon sarang lebah selatan!',
+    cryEn: 'My honey hollow was burned! Please guide me to the giant southern hollow tree!',
+    storyEpilogueId: 'Madu kembali mencakar kulit pohon tua dan menikmati sarang lebah hutan lezat dengan tenang.',
+    storyEpilogueEn: 'Madu is happily foraging in a giant hollow trunk, feasting on wild honey in tranquility.',
+  },
+  {
+    id: 'rangkong',
+    name: 'Rangkong si Burung Enggang',
+    nameEn: 'Rangkong the Hornbill',
+    species: 'Helmeted Hornbill (Rhinoplax vigil)',
+    emoji: '🦅',
+    lostPos: { x: 260, y: 520 },
+    habitat: {
+      name: 'Puncak Kanopi Bukit Utara',
+      nameEn: 'Northern High Ridge Canopy',
+      desc: 'Puncak tertinggi perbukitan hutan primer di mana udara bersih dari asap karhutla.',
+      descEn: 'The highest ridge of the primary forest, where the air is clear of wildfire smoke.',
+      icon: '🌲',
+      x: 520,
+      y: 110,
+      radius: 48,
+      color: '#84cc16',
+    },
+    cryId: 'Sayapku kotor tertutup jelaga hitam! Tolong bantu aku mencapai puncak kanopi bukit utara yang bersih!',
+    cryEn: 'My wings are soot-stained! Help me reach the clean high ridge canopy in the north!',
+    storyEpilogueId: 'Rangkong terbang membubung tinggi di atas bukit utara dengan sayap bersih menyambut fajar.',
+    storyEpilogueEn: 'Rangkong soars freely above the pristine northern ridge with soot-free wings greeting the dawn.',
   },
 ];
 
@@ -199,6 +411,16 @@ function buildGameConfig(searchParams) {
 }
 
 export default function GamePage() {
+  const location = useLocation();
+  const config = useMemo(
+    () => buildGameConfig(new URLSearchParams(location.search)),
+    [location.search],
+  );
+  // key → game di-remount bersih setiap kali misi dari peta berganti
+  return <RadarMissionGame key={location.search} config={config} />;
+}
+
+function RadarMissionGame({ config }) {
   const { locale } = useTranslation();
   const isId = locale === 'id';
   const { missions, preset } = config;
@@ -1553,7 +1775,7 @@ export default function GamePage() {
               {isId ? 'Beranda' : 'Home'}
             </Link>
             <span>/</span>
-            <Link to="/game" className="hover:text-emerald-300 transition-colors">
+            <Link to="/game/radar-rescue" className="hover:text-emerald-300 transition-colors">
               {isId ? 'Peta Misi' : 'Mission Map'}
             </Link>
             <span>/</span>
@@ -1567,15 +1789,6 @@ export default function GamePage() {
               {isId ? `Target: ${currentMission.name}` : `Target: ${currentMission.nameEn}`}
             </span>
           </div>
-
-          <h1 className="font-hand text-4xl sm:text-5xl font-bold text-cream-50 tracking-wide">
-            {isId ? 'Misi Radar & Penyelamatan Karhutla' : 'Radar Mission & Karhutla Rescue'}
-          </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-sm sm:text-base text-slate-300">
-            {isId
-              ? 'Pilih salah satu dari dua game di bawah ini. Setiap game berjalan di halaman terpisah agar tim dapat mengembangkan keduanya secara paralel.'
-              : 'Choose one of the two playable missions below. Each game lives on its own dedicated page for independent parallel development.'}
-          </p>
         </div>
 
         {/* ── BANNER MISI DARI PETA ── */}
@@ -1612,7 +1825,7 @@ export default function GamePage() {
               )}
             </div>
             <div className="flex items-center gap-2 font-mono text-[11px]">
-              <Link to="/game" className="text-emerald-300 hover:text-emerald-200">
+              <Link to="/game/radar-rescue" className="text-emerald-300 hover:text-emerald-200">
                 ← {isId ? 'Kembali ke Peta' : 'Back to Map'}
               </Link>
               <span className="text-emerald-700">|</span>
@@ -2037,13 +2250,13 @@ export default function GamePage() {
                   <span>{currentMission.habitat.icon}</span>
                   <span>{isId ? 'Target Habitat Asli:' : 'Target Natural Habitat:'}</span>
                 </div>
-
-                <h2 className="font-hand text-3xl font-bold text-white mb-2">
-                  {isId ? game.titleId : game.titleEn}
-                </h2>
-                <p className="text-sm text-slate-300 leading-relaxed mb-5">
-                  {isId ? game.subtitleId : game.subtitleEn}
+                <p className="text-cream-200 font-bold">
+                  {isId ? currentMission.habitat.name : currentMission.habitat.nameEn}
                 </p>
+                <p className="text-emerald-300/80 text-[11px]">
+                  {isId ? currentMission.habitat.desc : currentMission.habitat.descEn}
+                </p>
+              </div>
 
               <button
                 onClick={() => setShowFoundModal(false)}
@@ -2169,15 +2382,15 @@ export default function GamePage() {
                   {isId ? 'Acak titik api 🎲' : 'Shuffle fires 🎲'}
                 </button>
                 <Link
-                  to="/game"
+                  to="/game/radar-rescue"
                   className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-950 border border-amber-600 text-amber-200 font-bold hover:bg-amber-900"
                 >
                   {isId ? 'Misi lain di peta 🗺️' : 'Another map mission 🗺️'}
                 </Link>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
         {/* ── GAME OVER: SATU RUMAH LAGI TIDAK SEMPAT DISELAMATKAN ── */}
         {gameOver && (
