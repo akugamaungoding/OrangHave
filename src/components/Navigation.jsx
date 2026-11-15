@@ -67,9 +67,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
               <span className="font-hand text-2xl font-bold leading-none tracking-wide text-[#18442e] transition-colors group-hover:text-[#1b5e3a]">
                 H.O.M.E.
               </span>
-              <span className="hidden lg:inline-block rounded-full border border-[#c89d54]/50 bg-[#f0e5cf] px-1.5 py-0.5 font-mono text-[8.5px] font-bold tracking-wider text-[#6e5128] uppercase">
-                NASA EO
-              </span>
+             
             </div>
             <span className="hidden sm:inline font-serif text-[10.5px] leading-tight tracking-wide text-[#5c5346] max-w-[15rem]">
               {t('meta.expanded')}
