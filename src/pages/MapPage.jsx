@@ -780,7 +780,6 @@ export default function MapPage() {
                 ${speciesBadgesHtml}
               </div>
             </div>
-
           </div>
         </div>
       `;
