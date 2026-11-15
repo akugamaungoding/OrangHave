@@ -4,6 +4,7 @@ import ReachPage from './ReachPage';
 import WildlifePage from './WildlifePage';
 import ActionPage from './ActionPage';
 import SciencePage from './SciencePage';
+import SdgImpactPage from './SdgImpactPage';
 import { SectionDecor } from '../components';
 import useScrollReveal from '../hooks/useScrollReveal';
 
@@ -15,7 +16,7 @@ import useScrollReveal from '../hooks/useScrollReveal';
    ════════════════════════════════════════════════════════════════════ */
 
 export default function LandingPage() {
-  useScrollReveal(['story', 'science', 'reach', 'wildlife', 'action']);
+  useScrollReveal(['story', 'sdg', 'science', 'reach', 'wildlife', 'action']);
 
   return (
     <div>
@@ -65,6 +66,10 @@ export default function LandingPage() {
       <section id="story" className="relative isolate scroll-mt-16 overflow-hidden border-t border-paper-edge">
         <SectionDecor variant="watercolor" />
         <StoryPage embedded />
+      </section>
+      {/* Why it matters — dampak karhutla pada SDG 15, 13 & 3 */}
+      <section id="sdg" className="relative isolate scroll-mt-16 overflow-hidden border-t border-paper-edge bg-paper-warm/60">
+        <SdgImpactPage embedded />
       </section>
       {/* Science & Method — untuk juri, dosen & pakar (tema tetap karhutla) */}
       <section id="science" className="relative isolate scroll-mt-16 overflow-hidden border-t border-paper-edge">

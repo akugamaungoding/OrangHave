@@ -15934,177 +15934,47 @@
     "worldview_url": "https://worldview.earthdata.nasa.gov/?v=114.3751,-2.9637,116.7751,-1.3637&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
   },
   {
-    "id": "nasa-live-2026-11-13-115--0.107-114.875",
-    "latitude": -0.10726,
-    "longitude": 114.87463,
-    "brightness": 305.9,
-    "bright_ti4": 305.9,
-    "bright_ti5": 298,
-    "scan": 1.96,
-    "track": 1.37,
-    "acq_date": "2026-11-13",
-    "acq_time": "0115",
-    "satellite": "Terra & Aqua (NASA FIRMS API)",
-    "sensor": "MODIS 1km NRT (Terra/Aqua)",
+    "id": "nasa-live-2026-11-15-618--4.157-114.665",
+    "latitude": -4.15673,
+    "longitude": 114.66473,
+    "brightness": 347.1,
+    "bright_ti4": 347.1,
+    "bright_ti5": 292.94,
+    "scan": 0.42,
+    "track": 0.46,
+    "acq_date": "2026-11-15",
+    "acq_time": "0618",
+    "satellite": "NOAA-20 / JPSS-1 (NASA FIRMS API)",
+    "sensor": "VIIRS 375m NRT (NOAA-20)",
     "confidence": "nominal",
-    "frp": 9.15,
+    "frp": 8.22,
     "daynight": "D",
     "is_live": true,
     "is_baseline": false,
     "source_id": "nasa-firms-viirs",
-    "kabupaten": "Murung Raya Regency",
-    "provinsi": "Central Kalimantan, Indonesia",
+    "kabupaten": "Tanah Laut Regency",
+    "provinsi": "South Kalimantan, Indonesia",
     "region_code": "central",
-    "land_type": "Heart of Borneo Montane Rainforest",
+    "land_type": "Southern Coastal Wetlands & Shrubland",
     "peat_risk": false,
-    "distance_km": 60.5,
+    "distance_km": 39.6,
     "alert_level": "THERMAL MONITORING",
     "wildlife_scope": {
-      "id": "hab-kaltim-kutai-mahakam",
-      "corridorName": "Kutai NP – Middle Mahakam Wetlands – Berau Corridor",
-      "island": "East Kalimantan",
-      "lat": 0.15,
-      "lon": 116.92,
-      "radiusKm": 70,
-      "primaryIcon": "🦧",
-      "primarySpecies": "East Bornean Orangutan & Irrawaddy Dolphin",
-      "iucnStatus": "CR",
-      "exposurePct": 68,
-      "speciesList": [
-        {
-          "icon": "🦧",
-          "name": "East Bornean Orangutan",
-          "sci": "Pongo pygmaeus morio",
-          "status": "CR"
-        },
-        {
-          "icon": "🐬",
-          "name": "Mahakam Irrawaddy Dolphin",
-          "sci": "Orcaella brevirostris",
-          "status": "CR"
-        },
-        {
-          "icon": "🐂",
-          "name": "Bornean Banteng",
-          "sci": "Bos javanicus lowi",
-          "status": "EN"
-        }
-      ],
-      "impactSummary": "Dipterocarp forest & Mahakam peat lakes supporting Irrawaddy Dolphins & Morio Orangutans."
-    },
-    "google_maps_url": "https://www.google.com/maps?q=-0.1073,114.8746",
-    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=113.6746,-0.9073,116.0746,0.6927&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
-  },
-  {
-    "id": "nasa-live-2026-11-13-834--2.264-110.689",
-    "latitude": -2.26396,
-    "longitude": 110.68913,
-    "brightness": 317.7,
-    "bright_ti4": 317.7,
-    "bright_ti5": 298,
-    "scan": 1.1,
-    "track": 1.05,
-    "acq_date": "2026-11-13",
-    "acq_time": "0834",
-    "satellite": "Terra & Aqua (NASA FIRMS API)",
-    "sensor": "MODIS 1km NRT (Terra/Aqua)",
-    "confidence": "nominal",
-    "frp": 12.2,
-    "daynight": "D",
-    "is_live": true,
-    "is_baseline": false,
-    "source_id": "nasa-firms-viirs",
-    "kabupaten": "Ketapang Regency",
-    "provinsi": "West Kalimantan, Indonesia",
-    "region_code": "west",
-    "land_type": "Pawan–Pesaguan Peat Dome (Gunung Palung Buffer)",
-    "peat_risk": true,
-    "distance_km": 71.8,
-    "alert_level": "THERMAL MONITORING",
-    "wildlife_scope": {
-      "id": "hab-kalteng-tanjungputing",
-      "corridorName": "Tanjung Puting – Seruyan – Kotawaringin Corridor",
+      "id": "hab-kalteng-sebangau",
+      "corridorName": "Sebangau – Pulang Pisau – Katingan Peat Dome Corridor",
       "island": "Central Kalimantan",
-      "lat": -2.76,
-      "lon": 112.05,
-      "radiusKm": 60,
+      "lat": -2.48,
+      "lon": 113.92,
+      "radiusKm": 65,
       "primaryIcon": "🦧",
-      "primarySpecies": "Bornean Orangutan & Agile Gibbon",
+      "primarySpecies": "Bornean Orangutan (Pongo pygmaeus)",
       "iucnStatus": "CR",
-      "exposurePct": 76,
+      "exposurePct": 82,
       "speciesList": [
         {
           "icon": "🦧",
           "name": "Bornean Orangutan",
-          "sci": "Pongo pygmaeus wurmbii",
-          "status": "CR"
-        },
-        {
-          "icon": "🐒",
-          "name": "Bornean White-bearded Gibbon",
-          "sci": "Hylobates albibarbis",
-          "status": "EN"
-        },
-        {
-          "icon": "🐻",
-          "name": "Sun Bear",
-          "sci": "Helarctos malayanus",
-          "status": "VU"
-        }
-      ],
-      "impactSummary": "Critical coastal peat swamp primate sanctuary in southern Central Kalimantan."
-    },
-    "google_maps_url": "https://www.google.com/maps?q=-2.2640,110.6891",
-    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=109.4891,-3.0640,111.8891,-1.4640&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
-  },
-  {
-    "id": "nasa-live-2026-11-13-834--1.714-110.531",
-    "latitude": -1.71439,
-    "longitude": 110.53081,
-    "brightness": 307.3,
-    "bright_ti4": 307.3,
-    "bright_ti5": 298,
-    "scan": 1.1,
-    "track": 1.05,
-    "acq_date": "2026-11-13",
-    "acq_time": "0834",
-    "satellite": "Terra & Aqua (NASA FIRMS API)",
-    "sensor": "MODIS 1km NRT (Terra/Aqua)",
-    "confidence": "nominal",
-    "frp": 6.3,
-    "daynight": "D",
-    "is_live": true,
-    "is_baseline": false,
-    "source_id": "nasa-firms-viirs",
-    "kabupaten": "Ketapang Regency",
-    "provinsi": "West Kalimantan, Indonesia",
-    "region_code": "west",
-    "land_type": "Pawan–Pesaguan Peat Dome (Gunung Palung Buffer)",
-    "peat_risk": true,
-    "distance_km": 36.5,
-    "alert_level": "THERMAL MONITORING",
-    "wildlife_scope": {
-      "id": "hab-kalbar-palung-sentarum",
-      "corridorName": "Gunung Palung – Kubu Raya – Kapuas Hulu Corridor",
-      "island": "West Kalimantan",
-      "lat": -0.45,
-      "lon": 110.35,
-      "radiusKm": 75,
-      "primaryIcon": "🦤",
-      "primarySpecies": "Helmeted Hornbill & West Bornean Orangutan",
-      "iucnStatus": "CR",
-      "exposurePct": 71,
-      "speciesList": [
-        {
-          "icon": "🦤",
-          "name": "Helmeted Hornbill",
-          "sci": "Rhinoplax vigil",
-          "status": "CR"
-        },
-        {
-          "icon": "🦧",
-          "name": "Bornean Orangutan",
-          "sci": "Pongo pygmaeus wurmbii",
+          "sci": "Pongo pygmaeus",
           "status": "CR"
         },
         {
@@ -16112,11 +15982,141 @@
           "name": "Proboscis Monkey",
           "sci": "Nasalis larvatus",
           "status": "EN"
+        },
+        {
+          "icon": "🐆",
+          "name": "Sunda Clouded Leopard",
+          "sci": "Neofelis diardi",
+          "status": "VU"
         }
       ],
-      "impactSummary": "Emergent dipterocarp nesting trees of Helmeted Hornbills & coastal peat swamp forests."
+      "impactSummary": "Core habitat of ~6,900 Bornean Orangutans & Proboscis Monkeys exposed to peat smoke & canopy fragmentation."
     },
-    "google_maps_url": "https://www.google.com/maps?q=-1.7144,110.5308",
-    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=109.3308,-2.5144,111.7308,-0.9144&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
+    "google_maps_url": "https://www.google.com/maps?q=-4.1567,114.6647",
+    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=113.4647,-4.9567,115.8647,-3.3567&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
+  },
+  {
+    "id": "nasa-live-2026-11-15-618--3.859-114.791",
+    "latitude": -3.8589,
+    "longitude": 114.79111,
+    "brightness": 335.2,
+    "bright_ti4": 335.2,
+    "bright_ti5": 288.3,
+    "scan": 0.44,
+    "track": 0.46,
+    "acq_date": "2026-11-15",
+    "acq_time": "0618",
+    "satellite": "NOAA-20 / JPSS-1 (NASA FIRMS API)",
+    "sensor": "VIIRS 375m NRT (NOAA-20)",
+    "confidence": "nominal",
+    "frp": 3.2,
+    "daynight": "D",
+    "is_live": true,
+    "is_baseline": false,
+    "source_id": "nasa-firms-viirs",
+    "kabupaten": "Tanah Laut Regency",
+    "provinsi": "South Kalimantan, Indonesia",
+    "region_code": "central",
+    "land_type": "Southern Coastal Wetlands & Shrubland",
+    "peat_risk": false,
+    "distance_km": 4.5,
+    "alert_level": "THERMAL MONITORING",
+    "wildlife_scope": {
+      "id": "hab-kalteng-sebangau",
+      "corridorName": "Sebangau – Pulang Pisau – Katingan Peat Dome Corridor",
+      "island": "Central Kalimantan",
+      "lat": -2.48,
+      "lon": 113.92,
+      "radiusKm": 65,
+      "primaryIcon": "🦧",
+      "primarySpecies": "Bornean Orangutan (Pongo pygmaeus)",
+      "iucnStatus": "CR",
+      "exposurePct": 82,
+      "speciesList": [
+        {
+          "icon": "🦧",
+          "name": "Bornean Orangutan",
+          "sci": "Pongo pygmaeus",
+          "status": "CR"
+        },
+        {
+          "icon": "🐒",
+          "name": "Proboscis Monkey",
+          "sci": "Nasalis larvatus",
+          "status": "EN"
+        },
+        {
+          "icon": "🐆",
+          "name": "Sunda Clouded Leopard",
+          "sci": "Neofelis diardi",
+          "status": "VU"
+        }
+      ],
+      "impactSummary": "Core habitat of ~6,900 Bornean Orangutans & Proboscis Monkeys exposed to peat smoke & canopy fragmentation."
+    },
+    "google_maps_url": "https://www.google.com/maps?q=-3.8589,114.7911",
+    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=113.5911,-4.6589,115.9911,-3.0589&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
+  },
+  {
+    "id": "nasa-live-2026-11-15-618--3.028-114.360",
+    "latitude": -3.02759,
+    "longitude": 114.35988,
+    "brightness": 340.8,
+    "bright_ti4": 340.8,
+    "bright_ti5": 284.44,
+    "scan": 0.42,
+    "track": 0.45,
+    "acq_date": "2026-11-15",
+    "acq_time": "0618",
+    "satellite": "NOAA-20 / JPSS-1 (NASA FIRMS API)",
+    "sensor": "VIIRS 375m NRT (NOAA-20)",
+    "confidence": "nominal",
+    "frp": 7.14,
+    "daynight": "D",
+    "is_live": true,
+    "is_baseline": false,
+    "source_id": "nasa-firms-viirs",
+    "kabupaten": "Pulang Pisau Regency",
+    "provinsi": "Central Kalimantan, Indonesia",
+    "region_code": "central",
+    "land_type": "Deep Peat Dome (Kahayan–Sebangau Peat Unit)",
+    "peat_risk": true,
+    "distance_km": 36.8,
+    "alert_level": "THERMAL MONITORING",
+    "wildlife_scope": {
+      "id": "hab-kalteng-sebangau",
+      "corridorName": "Sebangau – Pulang Pisau – Katingan Peat Dome Corridor",
+      "island": "Central Kalimantan",
+      "lat": -2.48,
+      "lon": 113.92,
+      "radiusKm": 65,
+      "primaryIcon": "🦧",
+      "primarySpecies": "Bornean Orangutan (Pongo pygmaeus)",
+      "iucnStatus": "CR",
+      "exposurePct": 82,
+      "speciesList": [
+        {
+          "icon": "🦧",
+          "name": "Bornean Orangutan",
+          "sci": "Pongo pygmaeus",
+          "status": "CR"
+        },
+        {
+          "icon": "🐒",
+          "name": "Proboscis Monkey",
+          "sci": "Nasalis larvatus",
+          "status": "EN"
+        },
+        {
+          "icon": "🐆",
+          "name": "Sunda Clouded Leopard",
+          "sci": "Neofelis diardi",
+          "status": "VU"
+        }
+      ],
+      "impactSummary": "Core habitat of ~6,900 Bornean Orangutans & Proboscis Monkeys exposed to peat smoke & canopy fragmentation."
+    },
+    "google_maps_url": "https://www.google.com/maps?q=-3.0276,114.3599",
+    "worldview_url": "https://worldview.earthdata.nasa.gov/?v=113.1599,-3.8276,115.5599,-2.2276&efs=true&efa=false&efc=wildfires&l=Reference_Labels_15m,Coastlines_15m,DoS_International_Boundaries,Admin_Boundaries,MODIS_Terra_Thermal_Anomalies_Night,MODIS_Terra_Thermal_Anomalies_Day,MODIS_Terra_CorrectedReflectance_TrueColor"
   }
 ]

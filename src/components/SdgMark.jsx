@@ -68,9 +68,23 @@ function Glyph({ n }) {
   );
 }
 
-export default function SdgMark({ n, caption, compact = false }) {
+export default function SdgMark({ n, caption, compact = false, tileOnly = false }) {
   const goal = GOALS[n];
   if (!goal) return null;
+  // tileOnly: hanya ubin berwarna (tanpa keterangan) — untuk dipasang di atas latar berwarna
+  if (tileOnly) {
+    return (
+      <div
+        className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-md text-white shadow-sm"
+        style={{ backgroundColor: goal.color }}
+        role="img"
+        aria-label={`Sustainable Development Goal ${n}, ${goal.title}`}
+      >
+        <Glyph n={n} />
+        <span className="mt-0.5 text-[10px] font-bold leading-none">{n}</span>
+      </div>
+    );
+  }
   return (
     <figure className={compact ? "flex items-center gap-3" : "flex flex-col gap-2"}>
       <div
