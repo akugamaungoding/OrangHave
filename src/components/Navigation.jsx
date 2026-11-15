@@ -125,17 +125,6 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {onOpenBrief && (
-            <button
-              type="button"
-              onClick={onOpenBrief}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-charcoal-950 px-2.5 py-1.5 text-[11px] font-mono font-semibold text-sky-300 shadow-xs hover:bg-charcoal-900 hover:border-sky-400 transition-all cursor-pointer"
-              title="Open NASA Space Apps Judge Brief & Logic Trail"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
-              <span>🛰️ NASA Brief</span>
-            </button>
-          )}
           <div className="flex rounded-lg border border-moss-200 bg-cream-50 p-0.5" role="group" aria-label={t('common.language')}>
             {['en', 'id'].map((code) => (
               <button
