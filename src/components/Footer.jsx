@@ -6,9 +6,10 @@ const QUICK_LINKS = [
   { path: '/', labelKey: 'nav.home' },
   { path: '/game', labelKey: 'nav.game' },
   { path: '/map', labelKey: 'nav.map' },
-  { path: '/wildlife', labelKey: 'nav.wildlife' },
-  { path: '/reach', labelKey: 'nav.reach' },
-  { path: '/action', labelKey: 'nav.action' },
+  { path: '/#story', labelKey: 'nav.story' },
+  { path: '/#wildlife', labelKey: 'nav.wildlife' },
+  { path: '/#reach', labelKey: 'nav.reach' },
+  { path: '/#action', labelKey: 'nav.action' },
   { path: '/dashboard', labelKey: 'nav.dashboard' },
   { path: '/transparency', labelKey: 'nav.transparency' },
   { path: '/future', labelKey: 'nav.future' },
@@ -71,7 +72,7 @@ export default function Footer() {
 
             <div className="pt-2">
               <span className="inline-block rounded-md bg-moss-100/80 px-2.5 py-1 text-xs font-medium text-moss-800 border border-moss-200">
-                🌿 Kalimantan, Borneo
+                🌿 Indonesia
               </span>
             </div>
           </div>
@@ -82,7 +83,7 @@ export default function Footer() {
               Story & Exploration
             </h3>
             <ul className="space-y-2 text-sm">
-              {QUICK_LINKS.slice(0, 4).map((link) => (
+              {QUICK_LINKS.slice(0, 5).map((link) => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
@@ -101,7 +102,7 @@ export default function Footer() {
               Evidence & Actions
             </h3>
             <ul className="space-y-2 text-sm">
-              {QUICK_LINKS.slice(4).map((link) => (
+              {QUICK_LINKS.slice(5).map((link) => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
@@ -209,7 +210,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Heartfelt Statement */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-charcoal-500">
           <p>
-            © {CURRENT_YEAR} H.O.M.E. — Built with care for Kalimantan's wildlife.
+            © {CURRENT_YEAR} H.O.M.E. — Built with care for Indonesia wildlife.
           </p>
           <div className="flex items-center gap-4">
             <Link to="/transparency" className="hover:text-charcoal-800 transition-colors">

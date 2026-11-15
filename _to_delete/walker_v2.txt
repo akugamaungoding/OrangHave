@@ -1,0 +1,74 @@
+    .walker { animation: walk 46s linear infinite; }
+    .bob { animation: bob .8s ease-in-out infinite; }
+    .legA, .legB { animation: thigh .8s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+    .knee { animation: knee .8s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+    .armswing { animation: arm .8s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+    @keyframes walk {
+      0% { transform: translateX(-140px); opacity: 0; }
+      4% { opacity: 1; }
+      78% { transform: translateX(980px); opacity: 1; }
+      90% { transform: translateX(1080px) translateY(-6px); opacity: 0; }
+      100% { transform: translateX(1080px) translateY(-6px); opacity: 0; }
+    }
+    @keyframes bob { 0%,50%,100% { transform: translateY(0); } 25%,75% { transform: translateY(-1.6px); } }
+    @keyframes thigh { 0%,100% { transform: rotate(-22deg); } 50% { transform: rotate(20deg); } }
+    @keyframes knee { 0%,100% { transform: rotate(4deg); } 25% { transform: rotate(28deg); } 50% { transform: rotate(2deg); } }
+    @keyframes arm { 0%,100% { transform: rotate(20deg); } 50% { transform: rotate(-18deg); } }
+@@SPLIT@@
+  <!-- A man walking into the forest with a jerry can of petrol (the human cause of the fires) -->
+  <g class="walker">
+    <g transform="translate(0 840) scale(1.15)">
+      <g class="bob">
+        <!-- back arm (swinging) -->
+        <g class="armswing">
+          <path d="M-4 -78 L 0 -78 L -1 -62 L -5 -62 Z" fill="#2b2724"/>
+          <path d="M-5 -62.5 L -1 -62.5 L 1 -49 L -2.5 -48.5 Z" fill="#2b2724"/>
+          <ellipse cx="-0.5" cy="-47" rx="2.3" ry="2.6" fill="#5e4130"/>
+        </g>
+        <!-- back leg -->
+        <g class="legB" style="animation-delay:-0.45s" transform="rotate(12 0 -50)">
+          <path d="M-3 -50 L 3 -50 L 2.5 -27 L -2.5 -27 Z" fill="#1a1d1f"/>
+          <g class="knee" style="animation-delay:-0.45s">
+            <path d="M-2.6 -27.5 L 2.6 -27.5 L 2 -4 L -2 -4 Z" fill="#1a1d1f"/>
+            <path d="M-3 -4.5 L 3 -4.5 Q 9 -4 9.5 -0.5 L -3 0 Z" fill="#141414"/>
+          </g>
+        </g>
+        <!-- torso: long-sleeve shirt, slight forward lean -->
+        <path d="M-8 -80 Q 0 -83 9 -80 L 8 -60 Q 7 -52 6 -49 L -6 -49 Q -8 -60 -8 -80 Z" fill="#3b3631"/>
+        <path d="M-6 -50 L 6 -50 L 6.5 -46 L -6.5 -46 Z" fill="#1d1a17"/>
+        <!-- front leg -->
+        <g class="legA" style="animation-delay:0s" transform="rotate(-14 0 -50)">
+          <path d="M-3 -50 L 3 -50 L 2.5 -27 L -2.5 -27 Z" fill="#25292b"/>
+          <g class="knee" style="animation-delay:0s">
+            <path d="M-2.6 -27.5 L 2.6 -27.5 L 2 -4 L -2 -4 Z" fill="#25292b"/>
+            <path d="M-3 -4.5 L 3 -4.5 Q 9 -4 9.5 -0.5 L -3 0 Z" fill="#141414"/>
+          </g>
+        </g>
+        <!-- neck & head with cap -->
+        <rect x="-1.6" y="-85" width="4" height="5" fill="#5e4130"/>
+        <ellipse cx="1.5" cy="-91" rx="6" ry="7" fill="#5e4130"/>
+        <path d="M-4.8 -92 Q -6 -86 -3 -84 L -3 -92 Z" fill="#1d1612"/>
+        <path d="M-4.8 -94 Q 1 -101 7.5 -95 L 7.5 -93 L -4.8 -93 Z" fill="#4a3c2c"/>
+        <path d="M6 -94.5 L 13 -93.2 L 7 -92.2 Z" fill="#4a3c2c"/>
+        <circle cx="5.3" cy="-91" r=".7" fill="#120d09"/>
+        <!-- front arm carrying the can: straight-ish, pulled down by the weight -->
+        <path d="M4.5 -79 L 9 -79 L 10.5 -63 L 6.5 -63 Z" fill="#3b3631"/>
+        <path d="M6.5 -63.5 L 10.5 -63.5 L 11 -50 L 7.5 -50 Z" fill="#3b3631"/>
+        <path d="M5 -78 L 7 -63 L 7.6 -50" stroke="#2b2724" stroke-width="1" fill="none"/>
+        <ellipse cx="9.4" cy="-48.5" rx="2.4" ry="2.6" fill="#5e4130"/>
+        <!-- jerry can (petrol) -->
+        <g transform="translate(9 -47)">
+          <path d="M-5 0 L 6 0 L 6 3 L -5 3 Z" fill="#7d1d12"/>
+          <rect x="-7" y="2" width="16" height="22" rx="2" fill="#b3311d"/>
+          <path d="M-5 5 L 7 21 M7 5 L -5 21" stroke="#8a2414" stroke-width="1.6"/>
+          <rect x="-7" y="2" width="16" height="22" rx="2" fill="none" stroke="#6e1a10" stroke-width="1"/>
+          <path d="M5 2 L 8 -3 L 10 -2 L 8 2 Z" fill="#c9a24a"/>
+          <path d="M9 3 L 9 23" stroke="#e0823f" stroke-width="1.2" opacity=".8"/>
+        </g>
+        <!-- warm rim light from the fires ahead -->
+        <path d="M9 -79 Q 9.5 -66 8 -55" stroke="#e0823f" stroke-width="1.2" fill="none" opacity=".75" stroke-linecap="round"/>
+        <path d="M7.4 -96 Q 8.4 -91 7 -86" stroke="#e0823f" stroke-width="1.1" fill="none" opacity=".8" stroke-linecap="round"/>
+        <path d="M3 -49 L 2.5 -28 M2 -27 L 1.6 -5" stroke="#e0823f" stroke-width=".9" opacity=".45"/>
+      </g>
+    </g>
+  </g>

@@ -18,3 +18,4 @@ export { default as SarLookingGlass } from './SarLookingGlass.jsx';
 export { default as ChapterProgressRail } from './ChapterProgressRail.jsx';
 export { default as MissionBriefModal } from './MissionBriefModal.jsx';
 export { default as HumanRescuer } from './HumanRescuer.jsx';
+export { default as SectionDecor } from './SectionDecor.jsx';
