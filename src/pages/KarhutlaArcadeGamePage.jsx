@@ -14,7 +14,7 @@ class ArcadeAudio {
       if (AudioCtx) ArcadeAudio.ctx = new AudioCtx();
     }
     if (ArcadeAudio.ctx && ArcadeAudio.ctx.state === 'suspended') {
-      ArcadeAudio.ctx.resume().catch(() => {});
+      ArcadeAudio.ctx.resume().catch(() => { });
     }
   }
 
@@ -100,6 +100,315 @@ const WILDLIFE_CAST = [
   { id: 'kancil', emoji: '🦌', nameEn: 'Kancil (Mouse Deer)', nameId: 'Kancil (Pelanduk)', status: 'LC' },
   { id: 'rangkong', emoji: '🦅', nameEn: 'Rangkong (Hornbill)', nameId: 'Rangkong (Enggang)', status: 'CR' },
 ];
+
+/* ── Crisp 10x10 Pixel-Art UI Icons for Detail Boxes ── */
+const UI_PIXEL_PALETTE = {
+  '.': null,
+  k: '#3d2817', // dark ink outline
+  r: '#ef4444', // heart / alert red
+  p: '#fda4af', // heart shine pink
+  w: '#ffffff', // white highlight
+  o: '#c2410c', // orangutan fur
+  f: '#f59e0b', // orangutan face / gold
+  b: '#3b82f6', // water blue
+  c: '#7dd3fc', // cyan wave / shine
+  d: '#1d4ed8', // deep water blue
+  y: '#facc15', // star / bolt gold
+  g: '#22c55e', // shield emerald
+  s: '#94a3b8', // clock / metal silver
+};
+
+const UI_PIXEL_ICONS = {
+  heart: [
+    '..kk..kk..',
+    '.krrkkrrk.',
+    'kprrrrrrrk',
+    'kprrrrrrrk',
+    'krrrrrrrrk',
+    '.krrrrrrk.',
+    '..krrrrk..',
+    '...krrk...',
+    '....kk....',
+    '..........',
+  ],
+  skull: [
+    '..kkkkkk..',
+    '.kwwwwwwk.',
+    'kwkkwwkkwk',
+    'kwkkwwkkwk',
+    'kwwwwwwwwk',
+    '.kwkwwkwk.',
+    '..kkkkkk..',
+    '..........',
+    '..........',
+    '..........',
+  ],
+  orangutan: [
+    '..kkkkkk..',
+    '.kooooook.',
+    'kooffffook',
+    'koofkfkook',
+    'kooffffook',
+    '.koffffok.',
+    '..koooook.',
+    '.kkoooookk',
+    '..........',
+    '..........',
+  ],
+  clock: [
+    '...kkkk...',
+    '..kssssk..',
+    '.kswwwwsk.',
+    'kswwkkwwsk',
+    'kswwkwwwsk',
+    'kswwkkwwsk',
+    '.kswwwwsk.',
+    '..kssssk..',
+    '...kkkk...',
+    '..........',
+  ],
+  bomb: [
+    '....kk....',
+    '...kcck...',
+    '..kbbbbk..',
+    '.kcwbbbbk.',
+    '.kcbbbbbk.',
+    '.kbbbbbdk.',
+    '.kbbbbddk.',
+    '..kddddk..',
+    '...kkkk...',
+    '..........',
+  ],
+  wave: [
+    '..........',
+    '..kkkkk...',
+    '.kccccck..',
+    'kccwwwcck.',
+    'kbbbbbbbk.',
+    '.kkkkkbbk.',
+    '..kcckbbk.',
+    '.kccbbddk.',
+    '.kddddddk.',
+    '..kkkkkk..',
+  ],
+  bolt: [
+    '....kkkk..',
+    '...kyyyk..',
+    '..kyyyk...',
+    '.kyyyyykk.',
+    'kyyyyyyyk.',
+    '.kkkkyyk..',
+    '...kyyk...',
+    '..kyyk....',
+    '..kkk.....',
+    '..........',
+  ],
+  shield: [
+    '.kkkkkkkk.',
+    'kggggggggk',
+    'kgwwgggggk',
+    'kgwggggggk',
+    'kggggggggk',
+    '.kggggggk.',
+    '.kggggggk.',
+    '..kggggk..',
+    '...kggk...',
+    '....kk....',
+  ],
+  star: [
+    '....kk....',
+    '...kyyk...',
+    'kkkkyykkkk',
+    'kywwyyyyyk',
+    '.kyyyyyyk.',
+    '..kyyyyk..',
+    '.kyykkvyk.',
+    'kyyk..kyyk',
+    'kkk....kkk',
+    '..........',
+  ],
+  flag: [
+    '.kk.......',
+    '.krrrrrrk.',
+    '.krrffrrk.',
+    '.krrrrrrk.',
+    '.kkrrrrk..',
+    '.kk.......',
+    '.kk.......',
+    '.kk.......',
+    'kkkk......',
+    '..........',
+  ],
+};
+
+function PixelIcon({ name, size = 18, className = '' }) {
+  const grid = UI_PIXEL_ICONS[name];
+  if (!grid) return null;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 10 10"
+      shapeRendering="crispEdges"
+      className={`inline-block shrink-0 ${className}`}
+      aria-hidden="true"
+    >
+      {grid.map((row, ry) =>
+        row.split('').map((ch, cx) => {
+          const fill = UI_PIXEL_PALETTE[ch === 'v' ? 'y' : ch];
+          if (!fill) return null;
+          return <rect key={`${ry}-${cx}`} x={cx} y={ry} width={1} height={1} fill={fill} />;
+        }),
+      )}
+    </svg>
+  );
+}
+
+/* ── Fine 16-bit Pixel-Art Outer Space Wallpaper with Soft Blur ── */
+const SPACE_PIXELS = [
+  [18, 18, 2, '#ffffff'], [42, 34, 2, '#bae6fd'], [74, 14, 2, '#fef08a'], [108, 28, 2, '#ffffff'],
+  [144, 16, 2, '#fbcfe8'], [182, 32, 2, '#bae6fd'], [220, 12, 2, '#ffffff'], [258, 26, 2, '#fef08a'],
+  [296, 18, 2, '#bae6fd'], [334, 30, 2, '#ffffff'], [372, 14, 2, '#fbcfe8'], [412, 24, 2, '#ffffff'],
+  [456, 16, 2, '#bae6fd'], [24, 72, 2, '#fef08a'], [58, 92, 2, '#ffffff'], [96, 68, 2, '#bae6fd'],
+  [138, 88, 2, '#ffffff'], [176, 76, 2, '#fbcfe8'], [214, 96, 2, '#ffffff'], [254, 70, 2, '#bae6fd'],
+  [292, 90, 2, '#fef08a'], [330, 74, 2, '#ffffff'], [368, 94, 2, '#bae6fd'], [408, 78, 2, '#ffffff'],
+  [448, 88, 2, '#fef08a'], [16, 138, 2, '#ffffff'], [48, 162, 2, '#bae6fd'], [86, 146, 2, '#fbcfe8'],
+  [124, 174, 2, '#ffffff'], [166, 142, 2, '#fef08a'], [208, 166, 2, '#ffffff'], [248, 148, 2, '#bae6fd'],
+  [286, 170, 2, '#ffffff'], [326, 144, 2, '#fbcfe8'], [364, 168, 2, '#ffffff'], [402, 150, 2, '#fef08a'],
+  [442, 164, 2, '#bae6fd'], [22, 212, 2, '#bae6fd'], [62, 236, 2, '#ffffff'], [104, 218, 2, '#fef08a'],
+  [148, 242, 2, '#ffffff'], [190, 224, 2, '#fbcfe8'], [232, 248, 2, '#bae6fd'], [274, 220, 2, '#ffffff'],
+  [316, 244, 2, '#fef08a'], [358, 226, 2, '#ffffff'], [398, 246, 2, '#bae6fd'], [438, 222, 2, '#ffffff'],
+  [34, 274, 2, '#fef08a'], [84, 284, 2, '#ffffff'], [134, 276, 2, '#bae6fd'], [184, 288, 2, '#ffffff'],
+  [236, 274, 2, '#fbcfe8'], [288, 286, 2, '#ffffff'], [340, 272, 2, '#bae6fd'], [392, 284, 2, '#fef08a'],
+  [444, 276, 2, '#ffffff'],
+];
+
+const SPACE_SPARKLES = [
+  [54, 48, '#fef08a'],
+  [158, 52, '#bae6fd'],
+  [318, 44, '#ffffff'],
+  [426, 124, '#fbcfe8'],
+  [66, 202, '#bae6fd'],
+  [394, 206, '#fef08a'],
+];
+
+function PixelSpaceWallpaper() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#080c1c]" aria-hidden="true">
+      <svg
+        viewBox="0 0 480 300"
+        preserveAspectRatio="xMidYMid slice"
+        shapeRendering="crispEdges"
+        className="h-full w-full scale-[1.02] blur-[2.5px]"
+      >
+        {/* Deep space base */}
+        <rect x="0" y="0" width="480" height="300" fill="#080c1c" />
+
+        {/* Fine 16-bit Pixel Nebula Clouds */}
+        <rect x="0" y="34" width="136" height="68" fill="#141133" opacity="0.75" />
+        <rect x="18" y="46" width="88" height="42" fill="#1e184d" opacity="0.75" />
+        <rect x="34" y="56" width="52" height="22" fill="#2c236b" opacity="0.65" />
+
+        <rect x="308" y="14" width="172" height="76" fill="#0d1f36" opacity="0.8" />
+        <rect x="336" y="26" width="124" height="48" fill="#132e4f" opacity="0.75" />
+        <rect x="362" y="38" width="76" height="24" fill="#1a406b" opacity="0.65" />
+
+        <rect x="130" y="122" width="220" height="68" fill="#11112e" opacity="0.7" />
+        <rect x="168" y="134" width="144" height="42" fill="#181640" opacity="0.7" />
+
+        <rect x="0" y="202" width="160" height="98" fill="#0c1c30" opacity="0.75" />
+        <rect x="18" y="220" width="110" height="62" fill="#132a45" opacity="0.7" />
+
+        <rect x="316" y="198" width="164" height="102" fill="#171136" opacity="0.8" />
+        <rect x="340" y="216" width="116" height="66" fill="#23194f" opacity="0.7" />
+
+        {/* Fine pixel starfield */}
+        {SPACE_PIXELS.map(([sx, sy, sz, col], idx) => (
+          <rect key={`sp-${idx}`} x={sx} y={sy} width={sz} height={sz} fill={col} opacity="0.85" />
+        ))}
+
+        {/* 4-point pixel sparkles */}
+        {SPACE_SPARKLES.map(([cx, cy, col], idx) => (
+          <g key={`spk-${idx}`}>
+            <rect x={cx} y={cy - 2} width={2} height={6} fill={col} />
+            <rect x={cx - 2} y={cy} width={6} height={2} fill={col} />
+            <rect x={cx} y={cy} width={2} height={2} fill="#ffffff" />
+          </g>
+        ))}
+
+        {/* Top-Left Fine Pixel Ringed Planet */}
+        <g transform="translate(14, 22)">
+          <rect x="6" y="14" width="32" height="2" fill="#fde68a" opacity="0.8" />
+          <rect x="2" y="16" width="40" height="2" fill="#f59e0b" opacity="0.85" />
+          <rect x="14" y="6" width="16" height="3" fill="#fb923c" />
+          <rect x="10" y="9" width="24" height="5" fill="#f97316" />
+          <rect x="10" y="14" width="24" height="5" fill="#ea580c" />
+          <rect x="10" y="19" width="24" height="5" fill="#c2410c" />
+          <rect x="14" y="24" width="16" height="3" fill="#9a3412" />
+          <rect x="14" y="9" width="6" height="2" fill="#fed7aa" />
+          <rect x="0" y="18" width="10" height="2" fill="#fef08a" />
+          <rect x="10" y="20" width="24" height="2" fill="#fde047" />
+          <rect x="34" y="18" width="10" height="2" fill="#fef08a" />
+        </g>
+
+        {/* Top-Right Fine Pixel Earth & Orbital Satellite */}
+        <g transform="translate(426, 24)">
+          <rect x="8" y="0" width="16" height="3" fill="#38bdf8" />
+          <rect x="5" y="3" width="22" height="3" fill="#0ea5e9" />
+          <rect x="2" y="6" width="28" height="16" fill="#0284c7" />
+          <rect x="5" y="22" width="22" height="3" fill="#0369a1" />
+          <rect x="8" y="25" width="16" height="3" fill="#075985" />
+          {/* Continents */}
+          <rect x="8" y="6" width="8" height="5" fill="#22c55e" />
+          <rect x="10" y="11" width="6" height="5" fill="#16a34a" />
+          <rect x="19" y="9" width="8" height="8" fill="#22c55e" />
+          <rect x="21" y="17" width="6" height="4" fill="#15803d" />
+          {/* Clouds */}
+          <rect x="5" y="9" width="6" height="2" fill="#e0f2fe" />
+          <rect x="16" y="19" width="8" height="2" fill="#ffffff" />
+          {/* Tiny satellite */}
+          <rect x="-14" y="6" width="3" height="7" fill="#60a5fa" />
+          <rect x="-11" y="8" width="5" height="3" fill="#cbd5e1" />
+          <rect x="-6" y="6" width="3" height="7" fill="#60a5fa" />
+        </g>
+
+        {/* Bottom-Left Fine Pixel Moon */}
+        <g transform="translate(18, 244)">
+          <rect x="6" y="0" width="12" height="3" fill="#e2e8f0" />
+          <rect x="3" y="3" width="18" height="3" fill="#cbd5e1" />
+          <rect x="0" y="6" width="24" height="12" fill="#cbd5e1" />
+          <rect x="3" y="18" width="18" height="3" fill="#94a3b8" />
+          <rect x="6" y="21" width="12" height="3" fill="#64748b" />
+          <rect x="5" y="6" width="5" height="5" fill="#94a3b8" />
+          <rect x="14" y="12" width="5" height="5" fill="#94a3b8" />
+        </g>
+
+        {/* Pixel Shooting Star */}
+        <g transform="translate(86, 26)">
+          <rect x="0" y="8" width="5" height="2" fill="#38bdf8" opacity="0.45" />
+          <rect x="5" y="6" width="5" height="2" fill="#7dd3fc" opacity="0.7" />
+          <rect x="10" y="4" width="5" height="2" fill="#bae6fd" />
+          <rect x="15" y="1" width="5" height="4" fill="#ffffff" />
+          <rect x="17" y="1" width="3" height="2" fill="#fef08a" />
+        </g>
+
+        {/* Bottom-Right Fine Pixel Rocket */}
+        <g transform="translate(436, 248)">
+          <rect x="6" y="0" width="4" height="3" fill="#ef4444" />
+          <rect x="4" y="3" width="8" height="5" fill="#f8fafc" />
+          <rect x="6" y="5" width="4" height="3" fill="#38bdf8" />
+          <rect x="4" y="8" width="8" height="6" fill="#e2e8f0" />
+          <rect x="1" y="11" width="3" height="5" fill="#ef4444" />
+          <rect x="12" y="11" width="3" height="5" fill="#ef4444" />
+          <rect x="6" y="14" width="4" height="5" fill="#f97316" />
+          <rect x="6" y="19" width="4" height="3" fill="#facc15" />
+        </g>
+      </svg>
+      {/* Subtle dark soft-focus scrim so the foreground game stays the visual hero */}
+      <div className="absolute inset-0 bg-[#050814]/35 backdrop-blur-[1.5px]" />
+    </div>
+  );
+}
 
 const STAGES = [
   {
@@ -692,13 +1001,235 @@ export default function KarhutlaArcadeGamePage() {
           const x = c * TILE;
           const y = r * TILE;
           if (tile === T_SOLID) {
-            ctx.fillStyle = gs.stage.solidColor;
-            ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
-            ctx.fillStyle = '#2d5a40';
-            ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 12);
-            ctx.strokeStyle = '#0c1912';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x + 2, y + 2, TILE - 4, TILE - 4);
+            const upSolid = r > 0 && gs.grid[r - 1][c] === T_SOLID;
+            const downSolid = r < ROWS - 1 && gs.grid[r + 1][c] === T_SOLID;
+            const leftSolid = c > 0 && gs.grid[r][c - 1] === T_SOLID;
+            const rightSolid = c < COLS - 1 && gs.grid[r][c + 1] === T_SOLID;
+            const seed = (r * 37 + c * 19) % 12;
+
+            // 1. Seamless Old-Town Weathered Stone-Brick Masonry Base
+            ctx.fillStyle = '#5c6066'; // dark mortar bed
+            ctx.fillRect(x, y, TILE, TILE);
+
+            // Staggered Old-Town stone blocks (2 rows of stones per tile, seamless across neighbors)
+            const stoneShades = ['#8b8f94', '#7f848a', '#95989c', '#747980'];
+            const drawStone = (sx, sy, sw, sh, shadeIdx) => {
+              ctx.fillStyle = stoneShades[shadeIdx % stoneShades.length];
+              ctx.beginPath();
+              ctx.roundRect(sx + 0.8, sy + 0.8, sw - 1.6, sh - 1.6, 2.5);
+              ctx.fill();
+              // Subtle top-edge highlight on each old stone
+              ctx.fillStyle = 'rgba(241, 245, 249, 0.22)';
+              ctx.fillRect(sx + 2, sy + 1.5, sw - 4, 2);
+            };
+
+            const rowH = TILE / 2;
+            // Top stone course
+            drawStone(x, y, TILE * 0.52, rowH, seed);
+            drawStone(x + TILE * 0.52, y, TILE * 0.48, rowH, seed + 1);
+            // Bottom staggered stone course
+            drawStone(x, y + rowH, TILE * 0.26, rowH, seed + 2);
+            drawStone(x + TILE * 0.26, y + rowH, TILE * 0.52, rowH, seed + 3);
+            drawStone(x + TILE * 0.78, y + rowH, TILE * 0.22, rowH, seed + 1);
+
+            // Soft aged-stone patina & moss tint
+            if (seed % 2 === 0) {
+              ctx.fillStyle = 'rgba(101, 163, 13, 0.14)';
+              ctx.beginPath();
+              ctx.ellipse(x + 16, y + 18, 12, 8, 0.25, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            // 2. Old-Town 2.5D Exposed Outer Edges (only where not connected to another wall)
+            if (!upSolid) {
+              ctx.fillStyle = 'rgba(226, 232, 240, 0.45)';
+              ctx.fillRect(x, y, TILE, 3);
+              ctx.fillStyle = '#27272a';
+              ctx.fillRect(x, y, TILE, 1.5);
+            }
+            if (!leftSolid) {
+              ctx.fillStyle = 'rgba(226, 232, 240, 0.28)';
+              ctx.fillRect(x, y, 2.5, TILE);
+              ctx.fillStyle = '#27272a';
+              ctx.fillRect(x, y, 1.5, TILE);
+            }
+            if (!rightSolid) {
+              ctx.fillStyle = 'rgba(24, 24, 27, 0.35)';
+              ctx.fillRect(x + TILE - 3, y, 3, TILE);
+              ctx.fillStyle = '#27272a';
+              ctx.fillRect(x + TILE - 1.5, y, 1.5, TILE);
+            }
+            if (!downSolid) {
+              ctx.fillStyle = 'rgba(24, 24, 27, 0.45)';
+              ctx.fillRect(x, y + TILE - 5.5, TILE, 5.5);
+              ctx.fillStyle = '#18181b';
+              ctx.fillRect(x, y + TILE - 1.5, TILE, 1.5);
+            }
+
+            // 3. Lush Creeping & Hanging Old-Town Ivy Vines + Purple Clematis Flowers
+            const drawHeartLeaf = (lx, ly, angle, scale, shade = 0) => {
+              ctx.save();
+              ctx.translate(lx, ly);
+              ctx.rotate(angle);
+              ctx.scale(scale, scale);
+              ctx.fillStyle = shade === 0 ? '#65a30d' : shade === 1 ? '#84cc16' : '#4d7c0f';
+              ctx.strokeStyle = '#1a4314';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.bezierCurveTo(-5, -2.5, -5.5, 4.2, 0, 7.2);
+              ctx.bezierCurveTo(5.5, 4.2, 5, -2.5, 0, 0);
+              ctx.fill();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(0, 0.8);
+              ctx.lineTo(0, 5.5);
+              ctx.stroke();
+              ctx.restore();
+            };
+
+            const drawPurpleFlower = (fx, fy, radius) => {
+              for (let p = 0; p < 5; p += 1) {
+                const ang = (p * Math.PI * 2) / 5 - Math.PI / 2;
+                const px = fx + Math.cos(ang) * radius * 0.7;
+                const py = fy + Math.sin(ang) * radius * 0.7;
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(ang);
+                ctx.fillStyle = '#9333ea';
+                ctx.strokeStyle = '#581c87';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, radius * 0.62, radius * 0.38, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+              }
+              ctx.fillStyle = '#fde047';
+              ctx.beginPath();
+              ctx.arc(fx, fy, radius * 0.34, 0, Math.PI * 2);
+              ctx.fill();
+            };
+
+            // Continuous horizontal creeping runner along connected top/border walls
+            if (leftSolid || rightSolid) {
+              const runnerY = y + (upSolid ? 18 : 9);
+              ctx.strokeStyle = '#2d5a1b';
+              ctx.lineWidth = 2.2;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(leftSolid ? x : x + 5, runnerY + (seed % 2 === 0 ? -2 : 2));
+              ctx.bezierCurveTo(
+                x + TILE * 0.33,
+                runnerY + (seed % 2 === 0 ? 6 : -5),
+                x + TILE * 0.66,
+                runnerY + (seed % 2 === 0 ? -5 : 6),
+                rightSolid ? x + TILE : x + TILE - 5,
+                runnerY + (seed % 2 === 0 ? 2 : -2),
+              );
+              ctx.stroke();
+
+              // Hanging vine cascades draping down the stone face
+              if (seed % 2 === 0) {
+                ctx.strokeStyle = '#3f7d20';
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(x + 14, runnerY + 1);
+                ctx.quadraticCurveTo(x + 9, y + 26, x + 15, y + 36);
+                ctx.moveTo(x + 31, runnerY - 1);
+                ctx.quadraticCurveTo(x + 36, y + 23, x + 29, y + 32);
+                ctx.stroke();
+                // Curly tendril
+                ctx.strokeStyle = '#d4b46a';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(x + 17, y + 35, 2.5, 0, Math.PI * 1.6);
+                ctx.stroke();
+                drawHeartLeaf(x + 10, y + 21, -0.6, 0.82, 0);
+                drawHeartLeaf(x + 16, y + 29, 0.5, 0.78, 1);
+                drawHeartLeaf(x + 32, y + 23, 0.45, 0.76, 2);
+              }
+
+              // Dense alternating ivy leaves along horizontal runner
+              drawHeartLeaf(x + 8, runnerY - 1, -0.5, 0.88, 2);
+              drawHeartLeaf(x + 19, runnerY + 2, 0.4, 0.92, 1);
+              drawHeartLeaf(x + 30, runnerY - 1, -0.35, 0.86, 0);
+              drawHeartLeaf(x + 39, runnerY + 2, 0.55, 0.82, 1);
+
+              if (seed % 3 === 0) {
+                drawPurpleFlower(x + 23, runnerY - 1, 5.2);
+              } else if (seed % 5 === 0) {
+                drawPurpleFlower(x + 13, y + 28, 4.4);
+              }
+            } else if (upSolid || downSolid) {
+              // Continuous vertical climbing vine along side walls
+              const runnerX = x + (leftSolid ? 20 : 12);
+              ctx.strokeStyle = '#2d5a1b';
+              ctx.lineWidth = 2.2;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(runnerX, upSolid ? y : y + 6);
+              ctx.bezierCurveTo(
+                runnerX + 7,
+                y + TILE * 0.33,
+                runnerX - 7,
+                y + TILE * 0.66,
+                runnerX,
+                downSolid ? y + TILE : y + TILE - 6,
+              );
+              ctx.stroke();
+
+              // Side offshoot & golden curl
+              ctx.strokeStyle = '#d4b46a';
+              ctx.lineWidth = 1.3;
+              ctx.beginPath();
+              ctx.moveTo(runnerX, y + 18);
+              ctx.quadraticCurveTo(runnerX + 12, y + 15, runnerX + 15, y + 24);
+              ctx.arc(runnerX + 13, y + 24, 2.2, 0, Math.PI * 1.5);
+              ctx.stroke();
+
+              drawHeartLeaf(runnerX - 4, y + 9, -0.8, 0.88, 0);
+              drawHeartLeaf(runnerX + 5, y + 17, 0.75, 0.92, 1);
+              drawHeartLeaf(runnerX - 3, y + 27, -0.65, 0.86, 2);
+              drawHeartLeaf(runnerX + 5, y + 36, 0.6, 0.84, 0);
+
+              if (seed % 2 === 0) {
+                drawPurpleFlower(runnerX + 9, y + 20, 4.8);
+              }
+            } else {
+              // Interior Old-Town pillar: lush draping ivy crown + hanging tendrils
+              const cx = x + TILE / 2;
+              ctx.strokeStyle = '#2d5a1b';
+              ctx.lineWidth = 2;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(x + 6, y + 10);
+              ctx.quadraticCurveTo(cx, y + 5, x + TILE - 6, y + 12);
+              ctx.moveTo(x + 11, y + 9);
+              ctx.quadraticCurveTo(x + 8, y + 23, x + 13, y + 34);
+              ctx.moveTo(x + 31, y + 10);
+              ctx.quadraticCurveTo(x + 35, y + 22, x + 28, y + 32);
+              ctx.stroke();
+
+              ctx.strokeStyle = '#d4b46a';
+              ctx.lineWidth = 1.3;
+              ctx.beginPath();
+              ctx.arc(x + 15, y + 33, 2.4, 0, Math.PI * 1.5);
+              ctx.stroke();
+
+              drawHeartLeaf(x + 9, y + 11, -0.6, 0.9, 2);
+              drawHeartLeaf(x + 21, y + 8, 0.3, 0.94, 1);
+              drawHeartLeaf(x + 33, y + 12, 0.55, 0.88, 0);
+              drawHeartLeaf(x + 10, y + 23, -0.45, 0.82, 1);
+              drawHeartLeaf(x + 31, y + 23, 0.45, 0.8, 2);
+
+              if (seed % 2 === 0) {
+                drawPurpleFlower(x + 27, y + 11, 5.1);
+                drawPurpleFlower(x + 13, y + 27, 4.1);
+              } else {
+                drawPurpleFlower(x + 14, y + 12, 5.0);
+              }
+            }
           } else if (tile === T_BRUSH) {
             ctx.fillStyle = '#78350f';
             ctx.beginPath();
@@ -804,50 +1335,220 @@ export default function KarhutlaArcadeGamePage() {
         ctx.fillRect(x + 11, y + 11, TILE - 22, TILE - 22);
       });
 
-      // 7. Ember Spark Enemies
-      gs.enemies.forEach((en) => {
+      // 7. Blazing Fire Enemies (no circle/ring — pure flickering flame)
+      gs.enemies.forEach((en, idx) => {
         if (!en.alive) return;
-        const pulse = 16 + Math.sin(t * 10) * 2.5;
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+        const phase = t * 11 + idx * 1.9;
+        const sway = Math.sin(phase) * 3.2;
+        const stretch = Math.cos(phase * 1.4) * 3;
+        const fx = en.x;
+        const fy = en.y + 12;
+
+        // Soft heat shadow at base
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
         ctx.beginPath();
-        ctx.arc(en.x, en.y, pulse + 4, 0, Math.PI * 2);
+        ctx.ellipse(fx, fy + 4, 13, 4.5, 0, 0, Math.PI * 2);
         ctx.fill();
+
+        // Outer blazing red-orange flame
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.moveTo(fx, fy - 30 - stretch);
+        ctx.bezierCurveTo(fx + 16, fy - 18, fx + 17, fy + 2, fx, fy + 4);
+        ctx.bezierCurveTo(fx - 17, fy + 2, fx - 16, fy - 18, fx, fy - 30 - stretch);
+        ctx.fill();
+
+        // Side flame licks
         ctx.fillStyle = '#dc2626';
         ctx.beginPath();
-        ctx.arc(en.x, en.y, 15, 0, Math.PI * 2);
+        ctx.moveTo(fx - 11 + sway * 0.4, fy - 18);
+        ctx.quadraticCurveTo(fx - 16, fy - 4, fx - 5, fy + 2);
+        ctx.quadraticCurveTo(fx - 7, fy - 9, fx - 11 + sway * 0.4, fy - 18);
         ctx.fill();
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.font = '18px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🔥', en.x, en.y + 1);
+
+        ctx.beginPath();
+        ctx.moveTo(fx + 11 - sway * 0.4, fy - 20);
+        ctx.quadraticCurveTo(fx + 16, fy - 5, fx + 5, fy + 2);
+        ctx.quadraticCurveTo(fx + 7, fy - 10, fx + 11 - sway * 0.4, fy - 20);
+        ctx.fill();
+
+        // Mid bright amber flame
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(fx + sway * 0.6, fy - 24 - stretch * 0.7);
+        ctx.bezierCurveTo(fx + 11, fy - 13, fx + 12, fy + 1, fx, fy + 3);
+        ctx.bezierCurveTo(fx - 12, fy + 1, fx - 11, fy - 13, fx + sway * 0.6, fy - 24 - stretch * 0.7);
+        ctx.fill();
+
+        // Inner white-yellow blazing core
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.moveTo(fx + sway * 0.35, fy - 15 - stretch * 0.4);
+        ctx.bezierCurveTo(fx + 6.5, fy - 8, fx + 6.5, fy + 1, fx, fy + 2);
+        ctx.bezierCurveTo(fx - 6.5, fy + 1, fx - 6.5, fy - 8, fx + sway * 0.35, fy - 15 - stretch * 0.4);
+        ctx.fill();
+
+        // Rising ember sparks
+        const sparkY1 = fy - 26 - ((t * 28 + idx * 13) % 14);
+        const sparkY2 = fy - 22 - ((t * 22 + idx * 7 + 5) % 12);
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.arc(fx - 5 + Math.sin(phase) * 3, sparkY1, 1.8, 0, Math.PI * 2);
+        ctx.arc(fx + 6 + Math.cos(phase) * 3, sparkY2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
       });
 
-      // 8. Ranger Player
+      // 8. Player (Cute Blue-Helmet Chibi Arcade Character)
       const p = gs.player;
       const blink = p.invulnTimer > 0 && Math.floor(t * 16) % 2 === 0;
       if (!blink) {
-        const bob = Math.sin(p.walkPhase) * 2;
+        const bounce = -Math.abs(Math.sin(p.walkPhase)) * 2.6;
+        const stride = Math.sin(p.walkPhase) * 3.4;
+        const px = p.x;
+        const py = p.y + bounce;
+        const lookX = p.dir === 'left' ? -2.4 : p.dir === 'right' ? 2.4 : 0;
+        const lookY = p.dir === 'up' ? -1.5 : p.dir === 'down' ? 0.8 : 0;
+
         if (p.shieldTimer > 0) {
           ctx.strokeStyle = '#34d399';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y - 3, 24, 0, Math.PI * 2);
           ctx.stroke();
         }
-        ctx.fillStyle = '#065f46';
+
+        // Ground shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
         ctx.beginPath();
-        ctx.arc(p.x, p.y + bob, 17, 0, Math.PI * 2);
+        ctx.ellipse(p.x, p.y + 17, 11.5, 4.2, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#fde68a';
-        ctx.lineWidth = 2.5;
+
+        // Stubby royal-blue boots
+        ctx.fillStyle = '#1e40af';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(px - 4.4, py + 13.5 + stride * 0.45, 3.6, 4.6, -0.15, 0, Math.PI * 2);
+        ctx.fill();
         ctx.stroke();
-        ctx.font = '20px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🧑‍🚒', p.x, p.y + bob + 1);
+
+        ctx.beginPath();
+        ctx.ellipse(px + 4.4, py + 13.5 - stride * 0.45, 3.6, 4.6, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Compact round royal-blue body
+        ctx.fillStyle = '#1d4ed8';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.7;
+        ctx.beginPath();
+        ctx.arc(px, py + 6.5, 7.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Criss-cross suit straps & glowing sky-blue chest orb
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px - 5, py + 2);
+        ctx.lineTo(px + 5, py + 11);
+        ctx.moveTo(px + 5, py + 2);
+        ctx.lineTo(px - 5, py + 11);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.arc(px, py + 6.5, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Cute round white gloved hands
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(px - 9.5, py + 6.5 - stride * 0.4, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(px + 9.5, py + 6.5 + stride * 0.4, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Side helmet ear-pods (left & right)
+        ctx.fillStyle = '#1e40af';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.7;
+        ctx.beginPath();
+        ctx.arc(px - 11.5, py - 6.5, 4.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(px + 11.5, py - 6.5, 4.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Big glossy royal-blue helmet
+        const helmGrad = ctx.createRadialGradient(px - 4, py - 14, 2, px, py - 7, 14);
+        helmGrad.addColorStop(0, '#3b82f6');
+        helmGrad.addColorStop(0.65, '#1d4ed8');
+        helmGrad.addColorStop(1, '#1e3a8a');
+        ctx.fillStyle = helmGrad;
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(px, py - 7.5, 13.2, 11.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Glossy top-left shine on helmet
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.72)';
+        ctx.beginPath();
+        ctx.ellipse(px - 4.5, py - 14.5, 4.2, 2.1, -0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px + 2.5, py - 15.8, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (p.dir !== 'up') {
+          // Cute cream/white face visor cutout
+          ctx.fillStyle = '#fffbeb';
+          ctx.strokeStyle = '#1e3a8a';
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.ellipse(px + lookX * 0.75, py - 5.5 + lookY * 0.4, 8.8, 6.8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Cute determined V-brows on helmet forehead
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(px - 5.5 + lookX * 0.6, py - 14.2);
+          ctx.quadraticCurveTo(px - 3 + lookX * 0.6, py - 14.5, px - 1.2 + lookX * 0.6, py - 12.6);
+          ctx.moveTo(px + 5.5 + lookX * 0.6, py - 14.2);
+          ctx.quadraticCurveTo(px + 3 + lookX * 0.6, py - 14.5, px + 1.2 + lookX * 0.6, py - 12.6);
+          ctx.stroke();
+
+          // Tall oval glossy navy eyes
+          ctx.fillStyle = '#1e3a8a';
+          ctx.beginPath();
+          ctx.ellipse(px - 3.3 + lookX, py - 5.5 + lookY * 0.5, 2.2, 3.6, 0, 0, Math.PI * 2);
+          ctx.ellipse(px + 3.3 + lookX, py - 5.5 + lookY * 0.5, 2.2, 3.6, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Bright white eye highlights
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(px - 3.8 + lookX, py - 7 + lookY * 0.5, 0.9, 1.4, 0, 0, Math.PI * 2);
+          ctx.ellipse(px + 2.8 + lookX, py - 7 + lookY * 0.5, 0.9, 1.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       // 9. Particles
@@ -882,99 +1583,130 @@ export default function KarhutlaArcadeGamePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1610] px-4 py-6 text-[#faf6ee]">
-      <div className="mx-auto max-w-5xl">
-        {/* Top Header */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2d523c] bg-[#13261b]/95 px-4 py-3 shadow-lg">
+    <div className="relative min-h-screen overflow-hidden bg-[#080c1c] px-4 py-6 text-[#4a3525]">
+      <PixelSpaceWallpaper />
+      <div className="relative z-10 mx-auto max-w-5xl">
+        {/* Top Cozy Sketch Header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-4 py-3 shadow-[4px_4px_0_#5c4033]">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e5c787]/40 bg-[#1c3b29] text-xl shadow-xs">
-              💧
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#9bd3ec] shadow-[2px_2px_0_#5c4033]">
+              <PixelIcon name="bomb" size={24} />
             </span>
             <div>
-              <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#e5c787] uppercase">
-                {L('Crazy Arcade · Karhutla Edition', 'Gaya Crazy Arcade · Edisi Karhutla')}
+              <div className="inline-block rounded-full border border-[#5c4033]/50 bg-[#efe3c8] px-2.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wider text-[#6e4f3a] uppercase">
+                {L('Cozy Sketch Edition · Karhutla', 'Edisi Sketsa · Karhutla')}
               </div>
-              <h1 className="font-display text-lg font-extrabold tracking-tight text-white">
+              <h1 className="font-hand mt-0.5 text-2xl font-bold leading-tight text-[#4a3525]">
                 {L('Peatland Water-Bomb Rescue', 'Misi Bom Air Penyelamat Gambut')}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {(gameStatus === 'playing' || gameStatus === 'paused') && (
+              <button
+                type="button"
+                onClick={() => setGameStatus((s) => (s === 'playing' ? 'paused' : 'playing'))}
+                className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#f6d88c] px-3 py-1.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#fae2a5] active:translate-x-0.5 active:translate-y-0.5"
+              >
+                {gameStatus === 'playing' ? L('⏸ Pause', '⏸ Jeda') : L('▶ Resume', '▶ Lanjut')}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
                 ArcadeAudio.muted = !muted;
                 setMuted(!muted);
               }}
-              className="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 font-mono text-xs font-bold text-[#faf6ee] hover:bg-white/20"
+              className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] px-3 py-1.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f7eedb] active:translate-x-0.5 active:translate-y-0.5"
             >
               {muted ? '🔇 Muted' : '🔊 SFX'}
             </button>
             <Link
-              to="/map"
-              className="rounded-lg border border-[#e5c787]/50 bg-[#e5c787]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#f5e7c6] hover:bg-[#e5c787]/25"
+              to="/game"
+              className="rounded-xl border-2 border-[#5c4033] bg-[#a8cf98] px-3 py-1.5 font-mono text-xs font-extrabold text-[#2f4528] shadow-[2px_2px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
             >
-              {L('← Back to Map', '← Kembali ke Peta')}
+              {L('← Game Hub', '← Pilih Game')}
             </Link>
           </div>
         </div>
 
-        {/* Arcade HUD Bar */}
-        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-6">
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+        {/* Cozy Sketch HUD Sticker Bar with Pixel-Art Icons */}
+        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-6">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Stage', 'Level')}
             </div>
-            <div className="font-mono text-xs font-extrabold text-[#e5c787]">
-              {stageIdx + 1} / {STAGES.length}
+            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#b45309]">
+              <PixelIcon name="flag" size={16} />
+              <span>{stageIdx + 1} / {STAGES.length}</span>
             </div>
           </div>
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Lives', 'Nyawa')}
             </div>
-            <div className="text-sm font-bold text-rose-400">
-              {'❤️'.repeat(Math.max(0, hud.lives)) || '💀'}
+            <div className="mt-1 flex items-center gap-1">
+              {hud.lives > 0 ? (
+                Array.from({ length: hud.lives }).map((_, idx) => (
+                  <PixelIcon key={idx} name="heart" size={17} />
+                ))
+              ) : (
+                <PixelIcon name="skull" size={18} />
+              )}
             </div>
           </div>
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Rescued', 'Selamat')}
             </div>
-            <div className="font-mono text-sm font-extrabold text-emerald-400">
-              🦧 {hud.rescued} / {hud.totalAnimals}
+            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#3f7d20]">
+              <PixelIcon name="orangutan" size={18} />
+              <span>{hud.rescued}/{hud.totalAnimals}</span>
             </div>
           </div>
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Time', 'Waktu')}
             </div>
-            <div className="font-mono text-sm font-extrabold text-sky-300">
-              ⏱ {hud.timeLeft}s
+            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#2563eb]">
+              <PixelIcon name="clock" size={17} />
+              <span>{hud.timeLeft}s</span>
             </div>
           </div>
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Power-Ups', 'Kekuatan')}
             </div>
-            <div className="font-mono text-[11px] font-bold text-white">
-              💧{hud.maxBombs} · 🌊{hud.range} · ⚡{hud.speedLvl}
+            <div className="mt-1 flex items-center gap-1.5 font-mono text-xs font-extrabold text-[#4a3525]">
+              <span className="inline-flex items-center gap-0.5">
+                <PixelIcon name="bomb" size={14} />
+                {hud.maxBombs}
+              </span>
+              <span className="inline-flex items-center gap-0.5">
+                <PixelIcon name="wave" size={14} />
+                {hud.range}
+              </span>
+              <span className="inline-flex items-center gap-0.5">
+                <PixelIcon name="bolt" size={14} />
+                {hud.speedLvl}
+              </span>
             </div>
           </div>
-          <div className="rounded-xl border border-[#2d523c] bg-[#13261b] px-3 py-2">
-            <div className="font-mono text-[9px] text-[#9cb8a7] uppercase">
+          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
+            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
               {L('Score', 'Skor')}
             </div>
-            <div className="font-mono text-sm font-extrabold text-amber-300">
-              {score.toLocaleString()}
+            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#9a3412]">
+              <PixelIcon name="star" size={17} />
+              <span>{score.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
-        {/* Main Arcade Cabinet + Side Guide */}
-        <div className="grid gap-4 lg:grid-cols-[1fr_270px]">
-          <div className="relative overflow-hidden rounded-2xl border-4 border-[#2d523c] bg-[#0a140f] shadow-[0_24px_60px_rgba(0,0,0,0.65)]">
+        {/* Main Sketch Board + Spiral Notebook Sidebar */}
+        <div className="grid gap-4 lg:grid-cols-[1fr_275px]">
+          <div className="relative overflow-hidden rounded-2xl border-[3px] border-[#5c4033] bg-[#243627] shadow-[5px_5px_0_#5c4033]">
             <canvas
               ref={canvasRef}
               width={CANVAS_W}
@@ -984,16 +1716,34 @@ export default function KarhutlaArcadeGamePage() {
 
             {/* Toast Pickup Notification */}
             {toastMsg && (
-              <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full border border-[#e5c787]/60 bg-[#13261b]/95 px-4 py-1 font-mono text-xs font-extrabold text-[#fef08a] shadow-lg">
+              <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full border-2 border-[#5c4033] bg-[#fbf5e6] px-4 py-1 font-hand text-sm font-bold text-[#4a3525] shadow-[3px_3px_0_#5c4033]">
                 {toastMsg}
               </div>
             )}
 
-            {/* Overlays: Title / Paused / Stage Clear / Game Over / Victory */}
+            {/* Overlays: Cozy Spiral Notebook Modal */}
             {gameStatus !== 'playing' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#07100b]/82 p-6 backdrop-blur-xs">
-                <div className="w-full max-w-md rounded-2xl border-2 border-[#e5c787]/60 bg-[#13261b] p-6 text-center shadow-2xl">
-                  <div className="mb-2 text-4xl">
+              <div className="absolute inset-0 flex items-center justify-center bg-[#232b22]/75 p-5 backdrop-blur-xs">
+                <div className="relative w-full max-w-md rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] p-6 pt-7 text-center shadow-[6px_6px_0_#5c4033]">
+                  {/* Spiral Notebook Binder Rings */}
+                  <div className="pointer-events-none absolute -top-2.5 inset-x-0 flex justify-center gap-6">
+                    {[0, 1, 2, 3, 4].map((ring) => (
+                      <span
+                        key={ring}
+                        className="h-5 w-2.5 rounded-full border-2 border-[#5c4033] bg-[#e9dcc5]"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="mx-auto mb-2 inline-block rounded-full border border-[#5c4033]/50 bg-[#efe3c8] px-3 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[#6e4f3a] uppercase">
+                    {gameStatus === 'title' && L('FIELD MISSION NOTEBOOK', 'BUKU MISI LAPANGAN')}
+                    {gameStatus === 'paused' && L('MISSION PAUSED', 'MISI DIJEDA')}
+                    {gameStatus === 'stage_clear' && L('SECTOR CLEARED!', 'SEKTOR AMAN!')}
+                    {gameStatus === 'gameover' && L('TRY AGAIN!', 'COBA LAGI!')}
+                    {gameStatus === 'victory' && L('ALL WILDLIFE SAFE!', 'SEMUA SATWA SELAMAT!')}
+                  </div>
+
+                  <div className="mb-1 text-4xl">
                     {gameStatus === 'title' && '💧🔥🦧'}
                     {gameStatus === 'paused' && '⏸️'}
                     {gameStatus === 'stage_clear' && '🎉'}
@@ -1001,9 +1751,9 @@ export default function KarhutlaArcadeGamePage() {
                     {gameStatus === 'victory' && '🏆'}
                   </div>
 
-                  <h2 className="font-display text-2xl font-extrabold text-white">
+                  <h2 className="font-hand text-3xl font-bold text-[#4a3525]">
                     {gameStatus === 'title' &&
-                      L('Karhutla Water-Bomb Arcade', 'Arcade Bom Air Karhutla')}
+                      L('Karhutla Water-Bomb', 'Bom Air Karhutla')}
                     {gameStatus === 'paused' && L('Game Paused', 'Permainan Dijeda')}
                     {gameStatus === 'stage_clear' &&
                       L('Sector Cleared!', 'Sektor Aman!')}
@@ -1012,11 +1762,16 @@ export default function KarhutlaArcadeGamePage() {
                       L('All Wildlife Rescued!', 'Semua Satwa Selamat!')}
                   </h2>
 
-                  <p className="mt-2 text-xs leading-relaxed text-[#c6d6cc]">
+                  <p className="mt-2 rounded-xl border border-[#5c4033]/25 bg-[#f4ebd9] p-3 text-xs leading-relaxed text-[#5c4033]">
                     {gameStatus === 'title' &&
                       L(
-                        'Drop Water Bombs (Space) to blast burning peat brush, extinguish ember sparks, grab power-ups, and rescue trapped endemic animals!',
-                        'Letakkan Bom Air (Spasi) untuk meledakkan semak gambut terbakar, padamkan bara api, ambil item kekuatan, dan selamatkan satwa endemik yang terjebak!',
+                        'Drop Water Bombs (Space) to blast burning peat crates, extinguish chasing flames, and rescue trapped animals!',
+                        'Pasang Bom Air (Spasi) untuk memadamkan peti gambut terbakar, halau api pengejar, dan selamatkan satwa!',
+                      )}
+                    {gameStatus === 'paused' &&
+                      L(
+                        'Take a quick breather! Resume whenever you are ready.',
+                        'Istirahat sejenak! Lanjutkan kapan saja.',
                       )}
                     {gameStatus === 'stage_clear' &&
                       L(
@@ -1025,17 +1780,35 @@ export default function KarhutlaArcadeGamePage() {
                       )}
                     {gameStatus === 'gameover' &&
                       L(
-                        'The peat embers overwhelmed the ranger. Try again and use water bombs to clear a safe path!',
-                        'Bara gambut terlalu kuat. Coba lagi dan manfaatkan bom air untuk membuka jalur aman!',
+                        'The peat embers overwhelmed you. Drop water bombs around corners to trap the flames!',
+                        'Bara api terlalu kuat. Gunakan bom air di tikungan untuk memadamkan api!',
                       )}
                     {gameStatus === 'victory' &&
                       L(
-                        `Congratulations! You cleared all 3 Kalimantan & Sumatra wildfire sectors with ${score.toLocaleString()} pts.`,
-                        `Selamat! Anda menuntaskan seluruh 3 sektor karhutla dengan skor ${score.toLocaleString()} poin.`,
+                        `Congratulations! You cleared all 3 wildfire sectors with ${score.toLocaleString()} pts.`,
+                        `Selamat! Kamu menuntaskan seluruh 3 sektor karhutla dengan ${score.toLocaleString()} poin.`,
                       )}
                   </p>
 
-                  <div className="mt-5 flex flex-wrap justify-center gap-2.5">
+                  {gameStatus === 'title' && (
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {STAGES.map((st, idx) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => {
+                            setScore(0);
+                            startStage(idx, false);
+                          }}
+                          className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] px-3 py-1 font-mono text-[10px] font-bold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f6d88c]"
+                        >
+                          {L(`Stage ${idx + 1}`, `Level ${idx + 1}`)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-5 flex flex-wrap justify-center gap-3">
                     {gameStatus === 'title' && (
                       <button
                         type="button"
@@ -1043,25 +1816,37 @@ export default function KarhutlaArcadeGamePage() {
                           setScore(0);
                           startStage(0, false);
                         }}
-                        className="cursor-pointer rounded-xl border border-[#fde68a] bg-[#e5c787] px-5 py-2.5 font-mono text-xs font-extrabold text-[#13261b] shadow-md hover:bg-[#f0d69b]"
+                        className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#a8cf98] px-6 py-2.5 font-mono text-xs font-extrabold text-[#2f4528] shadow-[3px_3px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
                       >
-                        ▶ {L('START ARCADE', 'MULAI MAIN')}
+                        ▶ {L('START MISSION', 'MULAI MAIN')}
                       </button>
                     )}
                     {gameStatus === 'paused' && (
-                      <button
-                        type="button"
-                        onClick={() => setGameStatus('playing')}
-                        className="cursor-pointer rounded-xl bg-[#10b981] px-5 py-2.5 font-mono text-xs font-extrabold text-white hover:bg-[#059669]"
-                      >
-                        ▶ {L('RESUME', 'LANJUTKAN')}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setGameStatus('playing')}
+                          className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#a8cf98] px-5 py-2.5 font-mono text-xs font-extrabold text-[#2f4528] shadow-[3px_3px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
+                        >
+                          ▶ {L('RESUME', 'LANJUTKAN')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScore(0);
+                            startStage(stageIdx, false);
+                          }}
+                          className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] px-4 py-2.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[3px_3px_0_#5c4033] hover:bg-[#f7eedb] active:translate-x-0.5 active:translate-y-0.5"
+                        >
+                          ↻ {L('RESTART', 'ULANGI')}
+                        </button>
+                      </>
                     )}
                     {gameStatus === 'stage_clear' && (
                       <button
                         type="button"
                         onClick={() => startStage(stageIdx + 1, true)}
-                        className="cursor-pointer rounded-xl bg-[#e5c787] px-5 py-2.5 font-mono text-xs font-extrabold text-[#13261b] hover:bg-[#f0d69b]"
+                        className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#f6d88c] px-6 py-2.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[3px_3px_0_#5c4033] hover:bg-[#fae2a5] active:translate-x-0.5 active:translate-y-0.5"
                       >
                         {L('NEXT STAGE →', 'LEVEL BERIKUTNYA →')}
                       </button>
@@ -1073,7 +1858,7 @@ export default function KarhutlaArcadeGamePage() {
                           setScore(0);
                           startStage(0, false);
                         }}
-                        className="cursor-pointer rounded-xl bg-[#e5c787] px-5 py-2.5 font-mono text-xs font-extrabold text-[#13261b] hover:bg-[#f0d69b]"
+                        className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#e8958a] px-6 py-2.5 font-mono text-xs font-extrabold text-[#4a221d] shadow-[3px_3px_0_#5c4033] hover:bg-[#f0a59b] active:translate-x-0.5 active:translate-y-0.5"
                       >
                         ↻ {L('PLAY AGAIN', 'MAIN LAGI')}
                       </button>
@@ -1084,30 +1869,51 @@ export default function KarhutlaArcadeGamePage() {
             )}
           </div>
 
-          {/* Right Arcade Manual & Touch D-Pad */}
-          <div className="flex flex-col gap-3">
-            <div className="rounded-2xl border border-[#2d523c] bg-[#13261b] p-4">
-              <div className="font-mono text-[10px] font-bold tracking-wider text-[#e5c787] uppercase">
-                {L('Arcade Controls', 'Kontrol Arcade')}
+          {/* Right Cozy Sketch Notebook Sidebar: Controls & Power-Ups */}
+          <div className="flex flex-col gap-4">
+            <div className="relative rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] p-4 pt-5 shadow-[4px_4px_0_#5c4033]">
+              {/* Notebook Rings */}
+              <div className="pointer-events-none absolute -top-2 inset-x-0 flex justify-center gap-5">
+                {[0, 1, 2, 3].map((ring) => (
+                  <span
+                    key={ring}
+                    className="h-4 w-2 rounded-full border-2 border-[#5c4033] bg-[#e9dcc5]"
+                  />
+                ))}
               </div>
-              <div className="mt-2 space-y-1.5 text-xs text-[#d6e4dc]">
-                <div>
-                  <span className="font-mono font-bold text-white">WASD / Arrows</span> —{' '}
-                  {L('Move Ranger', 'Gerak Ranger')}
+              <div className="border-b-2 border-dashed border-[#5c4033]/25 pb-2 font-hand text-lg font-bold text-[#4a3525]">
+                🕹️ {L('Controls', 'Kontrol Game')}
+              </div>
+              <div className="mt-2.5 space-y-2 text-xs text-[#4a3525]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-lg border-2 border-[#5c4033] bg-[#efe3c8] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[1px_1px_0_#5c4033]">
+                    WASD / ▲▼◀▶
+                  </span>
+                  <span className="font-medium text-[#6e4f3a]">
+                    {L('Move', 'Gerak')}
+                  </span>
                 </div>
-                <div>
-                  <span className="font-mono font-bold text-sky-300">Space / Enter</span> —{' '}
-                  {L('Drop Water Bomb', 'Pasang Bom Air')}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-lg border-2 border-[#5c4033] bg-[#9bd3ec] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[1px_1px_0_#5c4033]">
+                    Space / Enter
+                  </span>
+                  <span className="font-medium text-[#6e4f3a]">
+                    {L('Water Bomb', 'Bom Air')}
+                  </span>
                 </div>
-                <div>
-                  <span className="font-mono font-bold text-amber-300">P / Esc</span> —{' '}
-                  {L('Pause', 'Jeda')}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-lg border-2 border-[#5c4033] bg-[#f6d88c] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[1px_1px_0_#5c4033]">
+                    P / Esc
+                  </span>
+                  <span className="font-medium text-[#6e4f3a]">
+                    {L('Pause', 'Jeda')}
+                  </span>
                 </div>
               </div>
 
-              {/* Touch / Mouse D-Pad */}
-              <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3">
-                <div className="grid grid-cols-3 gap-1">
+              {/* Sketch D-Pad + Pastel Water Bomb Button */}
+              <div className="mt-4 flex items-center justify-between gap-2 border-t-2 border-dashed border-[#5c4033]/25 pt-3.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   <div />
                   <button
                     type="button"
@@ -1116,7 +1922,7 @@ export default function KarhutlaArcadeGamePage() {
                     onMouseLeave={() => holdKey('arrowup', false)}
                     onTouchStart={() => holdKey('arrowup', true)}
                     onTouchEnd={() => holdKey('arrowup', false)}
-                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 font-bold hover:bg-white/20"
+                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] font-bold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f6d88c] active:translate-x-0.5 active:translate-y-0.5"
                   >
                     ▲
                   </button>
@@ -1128,7 +1934,7 @@ export default function KarhutlaArcadeGamePage() {
                     onMouseLeave={() => holdKey('arrowleft', false)}
                     onTouchStart={() => holdKey('arrowleft', true)}
                     onTouchEnd={() => holdKey('arrowleft', false)}
-                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 font-bold hover:bg-white/20"
+                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] font-bold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f6d88c] active:translate-x-0.5 active:translate-y-0.5"
                   >
                     ◀
                   </button>
@@ -1139,7 +1945,7 @@ export default function KarhutlaArcadeGamePage() {
                     onMouseLeave={() => holdKey('arrowdown', false)}
                     onTouchStart={() => holdKey('arrowdown', true)}
                     onTouchEnd={() => holdKey('arrowdown', false)}
-                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 font-bold hover:bg-white/20"
+                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] font-bold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f6d88c] active:translate-x-0.5 active:translate-y-0.5"
                   >
                     ▼
                   </button>
@@ -1150,7 +1956,7 @@ export default function KarhutlaArcadeGamePage() {
                     onMouseLeave={() => holdKey('arrowright', false)}
                     onTouchStart={() => holdKey('arrowright', true)}
                     onTouchEnd={() => holdKey('arrowright', false)}
-                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 font-bold hover:bg-white/20"
+                    className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] font-bold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f6d88c] active:translate-x-0.5 active:translate-y-0.5"
                   >
                     ▶
                   </button>
@@ -1159,29 +1965,43 @@ export default function KarhutlaArcadeGamePage() {
                 <button
                   type="button"
                   onClick={dropWaterBomb}
-                  className="cursor-pointer flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-sky-300 bg-sky-600 text-white shadow-lg active:scale-95"
+                  className="cursor-pointer flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-[#5c4033] bg-[#9bd3ec] text-[#1e3a5f] shadow-[3px_3px_0_#5c4033] hover:bg-[#b3dff2] active:translate-x-0.5 active:translate-y-0.5"
                 >
-                  <span className="text-xl">💧</span>
-                  <span className="font-mono text-[8.5px] font-extrabold uppercase">
+                  <PixelIcon name="bomb" size={22} />
+                  <span className="mt-0.5 font-mono text-[9px] font-extrabold uppercase">
                     {L('BOMB', 'BOM')}
                   </span>
                 </button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#2d523c] bg-[#13261b] p-4">
-              <div className="font-mono text-[10px] font-bold tracking-wider text-[#e5c787] uppercase">
-                {L('Power-Ups', 'Item Kekuatan')}
+            <div className="relative rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] p-4 pt-5 shadow-[4px_4px_0_#5c4033]">
+              <div className="pointer-events-none absolute -top-2 inset-x-0 flex justify-center gap-5">
+                {[0, 1, 2, 3].map((ring) => (
+                  <span
+                    key={ring}
+                    className="h-4 w-2 rounded-full border-2 border-[#5c4033] bg-[#e9dcc5]"
+                  />
+                ))}
               </div>
-              <div className="mt-2 space-y-1.5 text-xs text-[#d6e4dc]">
+              <div className="flex items-center gap-1.5 border-b-2 border-dashed border-[#5c4033]/25 pb-2 font-hand text-lg font-bold text-[#4a3525]">
+                <PixelIcon name="star" size={16} />
+                <span>{L('Power-Ups', 'Item Kekuatan')}</span>
+              </div>
+              <div className="mt-2.5 space-y-2 text-xs text-[#4a3525]">
                 {POWERUP_TYPES.map((pu) => (
-                  <div key={pu.id} className="flex items-center gap-2">
-                    <span>{pu.icon}</span>
-                    <span>{isId ? pu.labelId : pu.labelEn}</span>
+                  <div
+                    key={pu.id}
+                    className="flex items-center gap-2.5 rounded-xl border border-[#5c4033]/35 bg-[#f4ebd9] px-2.5 py-1.5"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-[#5c4033]/40 bg-[#fbf5e6]">
+                      <PixelIcon name={pu.id === 'range' ? 'wave' : pu.id === 'speed' ? 'bolt' : pu.id} size={15} />
+                    </span>
+                    <span className="font-semibold">{isId ? pu.labelId : pu.labelEn}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 border-t border-white/10 pt-2.5">
+              <div className="mt-3 border-t-2 border-dashed border-[#5c4033]/25 pt-2.5">
                 <SdgMark goal={15} compact />
               </div>
             </div>
