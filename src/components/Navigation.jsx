@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { path: '/map', labelKey: 'nav.map', icon: '🗺️' },
 ];
 
-export default function Navigation({ onOpenBrief, onReplaySplash }) {
+export default function Navigation({ onReplaySplash }) {
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef(null);
   const hamburgerButtonRef = useRef(null);
@@ -202,18 +202,6 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
 
         {/* Drawer Footer Disclaimer & Sound */}
         <div className="pt-6 mt-6 border-t border-paper-edge flex flex-col gap-3">
-          {onOpenBrief && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                onOpenBrief();
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-charcoal-950 border border-sky-500/40 px-4 py-2.5 text-xs font-mono font-semibold text-sky-300 hover:bg-charcoal-900 cursor-pointer"
-            >
-              <span>🛰️ Open NASA Judge Brief &amp; Logic Trail</span>
-            </button>
-          )}
           {onReplaySplash && (
             <button
               type="button"

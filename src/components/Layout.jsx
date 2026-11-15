@@ -3,13 +3,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import Footer from './Footer';
 import NasaSplashScreen from './NasaSplashScreen';
-import MissionBriefModal from './MissionBriefModal';
 
 /**
  * Main Layout component for H.O.M.E. ("Dancing with the SARs" Edition)
  * Provides:
  * - Cinematic Orbital & SAR Handshake Splash Screen (with replay capability)
- * - NASA Judge & Pitch Brief Modal
  * - Storybook paper texture background throughout
  * - Skip to main content accessibility link
  * - Sticky responsive navigation with SoundToggle and mobile drawer
@@ -20,7 +18,6 @@ export default function Layout({ children }) {
   const { pathname } = useLocation();
   const hideFooter = pathname === '/map' || pathname.startsWith('/map/');
   const [forceSplash, setForceSplash] = useState(false);
-  const [briefOpen, setBriefOpen] = useState(false);
 
   const handleReplaySplash = () => {
     setForceSplash(true);
@@ -34,13 +31,6 @@ export default function Layout({ children }) {
         onComplete={() => setForceSplash(false)}
       />
 
-      {/* NASA Judge & Pitch Brief Modal */}
-      <MissionBriefModal
-        isOpen={briefOpen}
-        onClose={() => setBriefOpen(false)}
-        onReplaySplash={handleReplaySplash}
-      />
-
       {/* Accessible Skip Link */}
       <a
         href="#main-content"
@@ -50,10 +40,7 @@ export default function Layout({ children }) {
       </a>
 
       {/* Responsive Navigation Header */}
-      <Navigation
-        onOpenBrief={() => setBriefOpen(true)}
-        onReplaySplash={handleReplaySplash}
-      />
+      <Navigation onReplaySplash={handleReplaySplash} />
 
       {/* Main Content Area */}
       <main
