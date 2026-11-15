@@ -912,6 +912,12 @@ export default function KarhutlaArcadeGamePage() {
               {muted ? '🔇 Muted' : '🔊 SFX'}
             </button>
             <Link
+              to="/game"
+              className="rounded-lg border border-[#e5c787]/50 bg-[#e5c787]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#f5e7c6] hover:bg-[#e5c787]/25"
+            >
+              {L('← Mission Hub', '← Pusat Misi')}
+            </Link>
+            <Link
               to="/map"
               className="rounded-lg border border-[#e5c787]/50 bg-[#e5c787]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#f5e7c6] hover:bg-[#e5c787]/25"
             >

@@ -392,6 +392,15 @@ export default function MissionMapPage() {
                 </div>
                 <div className="font-display text-[15px] font-extrabold tracking-tight text-white">🎮 Radar Mission</div>
               </div>
+              <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => navigate("/game")}
+                title={L("Back to the Mission Hub", "Kembali ke Pusat Misi")}
+                className="cursor-pointer rounded-full border border-[#e5c787]/50 bg-[#e5c787]/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-[#f5e7c6] transition-colors hover:bg-[#e5c787]/25"
+              >
+                ← {L("Hub", "Pusat Misi")}
+              </button>
               <button
                 type="button"
                 onClick={() => setPanelOpen((v) => !v)}
@@ -400,6 +409,7 @@ export default function MissionMapPage() {
               >
                 {panelOpen ? "−" : "+"}
               </button>
+              </div>
             </div>
           </div>
 

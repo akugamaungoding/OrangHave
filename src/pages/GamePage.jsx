@@ -1770,9 +1770,20 @@ function RadarMissionGame({ config }) {
       <div className="mx-auto max-w-7xl">
         {/* TOP BAR / BREADCRUMB */}
         <div className="mb-3 flex items-center justify-between text-xs text-emerald-400 font-mono">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/game"
+              className="rounded-full border border-amber-400/50 bg-amber-400/10 px-3 py-1 font-bold text-amber-200 transition-colors hover:bg-amber-400/20"
+              title={isId ? 'Kembali ke Pusat Misi' : 'Back to the Mission Hub'}
+            >
+              ← {isId ? 'Pusat Misi' : 'Mission Hub'}
+            </Link>
             <Link to="/" className="hover:text-emerald-300 transition-colors">
               {isId ? 'Beranda' : 'Home'}
+            </Link>
+            <span>/</span>
+            <Link to="/game" className="hover:text-emerald-300 transition-colors">
+              {isId ? 'Pusat Misi' : 'Mission Hub'}
             </Link>
             <span>/</span>
             <Link to="/game/radar-rescue" className="hover:text-emerald-300 transition-colors">
