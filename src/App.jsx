@@ -6,20 +6,38 @@ import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import MapPage from './pages/MapPage';
 import GamePage from './pages/GamePage';
+import GameHubPage from './pages/GameHubPage';
+import MissionMapPage from './pages/MissionMapPage';
+import KarhutlaArcadeGamePage from './pages/KarhutlaArcadeGamePage';
 
 /**
  * ScrollToTop helper: scrolls window back to (0, 0) on route change
  */
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
+    // Link dengan #anchor (mis. /#chapter-choice): gulir ke bagian itu setelah halaman dirender
+    if (hash) {
+      let tries = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(hash.slice(1));
+        if (el) {
+          el.scrollIntoView({ behavior: 'instant', block: 'start' });
+        } else if (tries < 20) {
+          tries += 1;
+          setTimeout(tryScroll, 100);
+        }
+      };
+      tryScroll();
+      return;
+    }
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'instant',
     });
-  }, [pathname]);
+  }, [pathname, hash]);
 
   return null;
 }
@@ -54,7 +72,11 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/game" element={<GamePage />} />
+          {/* Pusat Misi: pilih game → peta misi Radar Rescue / Arcade Bom Air */}
+          <Route path="/game" element={<GameHubPage />} />
+          <Route path="/game/radar-rescue" element={<MissionMapPage />} />
+          <Route path="/game/play" element={<GamePage />} />
+          <Route path="/game/karhutla-arcade" element={<KarhutlaArcadeGamePage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

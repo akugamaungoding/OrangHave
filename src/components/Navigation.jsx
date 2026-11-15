@@ -4,9 +4,9 @@ import { t, useTranslation } from '../i18n';
 import SoundToggle from './SoundToggle';
 
 const NAV_ITEMS = [
-  { path: '/', labelKey: 'nav.home' },
-  { path: '/game', labelKey: 'nav.game' },
-  { path: '/map', labelKey: 'nav.map' },
+  { path: '/', labelKey: 'nav.home', icon: '🏡' },
+  { path: '/game', labelKey: 'nav.game', icon: '🎮' },
+  { path: '/map', labelKey: 'nav.map', icon: '🗺️' },
 ];
 
 export default function Navigation({ onOpenBrief, onReplaySplash }) {
@@ -40,17 +40,17 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
   }, [isOpen]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-paper-edge/80 bg-paper-warm/95 backdrop-blur-md transition-colors">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-t-[3px] border-t-[#18442e] border-b border-[#d8cbb2] bg-gradient-to-r from-[#fbf7ee]/95 via-[#f6efdf]/95 to-[#fbf7ee]/95 shadow-[0_6px_24px_rgba(24,68,46,0.08)] backdrop-blur-md transition-colors">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 
         {/* Brand Logo & Tagline */}
         <Link
           to="/"
-          className="group flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 rounded-md p-1"
+          className="group flex items-center gap-3 rounded-xl p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1b5e3a]"
           aria-label="H.O.M.E. — Return to homepage"
         >
-          {/* Watercolor leaf emblem */}
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-moss-100 text-moss-700 border border-moss-300 group-hover:bg-moss-200 transition-colors shadow-xs">
+          {/* Forest & Globe Emblem */}
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#1b5e3a] to-[#123c26] text-[#faf6ee] ring-2 ring-[#c89d54]/45 shadow-sm transition-transform duration-200 group-hover:scale-105">
             <svg
               className="h-5 w-5"
               viewBox="0 0 24 24"
@@ -62,18 +62,23 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
           </div>
 
           <div className="flex flex-col">
-            <span className="font-hand text-2xl font-bold leading-tight tracking-wide text-moss-900 group-hover:text-moss-700 transition-colors">
-              H.O.M.E.
-            </span>
-            <span className="hidden sm:inline font-serif text-[10px] tracking-wide text-charcoal-500 -mt-0.5 max-w-[14rem] leading-tight">
+            <div className="flex items-center gap-1.5">
+              <span className="font-hand text-2xl font-bold leading-none tracking-wide text-[#18442e] transition-colors group-hover:text-[#1b5e3a]">
+                H.O.M.E.
+              </span>
+              <span className="hidden lg:inline-block rounded-full border border-[#c89d54]/50 bg-[#f0e5cf] px-1.5 py-0.5 font-mono text-[8.5px] font-bold tracking-wider text-[#6e5128] uppercase">
+                NASA EO
+              </span>
+            </div>
+            <span className="hidden sm:inline font-serif text-[10.5px] leading-tight tracking-wide text-[#5c5346] max-w-[15rem]">
               {t('meta.expanded')}
             </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop & Tablet Pill Navigation */}
         <nav
-          className="hidden md:flex items-center gap-1"
+          className="hidden md:flex items-center gap-1 rounded-full border border-[#d6c8ad] bg-[#efe6d3]/85 p-1 shadow-inner"
           aria-label="Primary Navigation"
         >
           {NAV_ITEMS.map((item) => (
@@ -81,57 +86,47 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isActive
-                  ? 'text-moss-900 bg-moss-100/90 font-semibold shadow-xs'
-                  : 'text-charcoal-700 hover:text-moss-800 hover:bg-cream-200/70'
+                `flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs lg:text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'bg-[#18442e] text-[#faf6ee] shadow-sm'
+                    : 'text-[#443c32] hover:bg-[#faf6ee]/80 hover:text-[#18442e]'
                 }`
               }
             >
-              {({ isActive }) => (
-                <>
-                  <span>{t(item.labelKey)}</span>
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-moss-600 rounded-full"
-                    />
-                  )}
-                </>
-              )}
+              <span className="text-xs leading-none" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {onOpenBrief && (
-            <button
-              type="button"
-              onClick={onOpenBrief}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-charcoal-950 px-2.5 py-1.5 text-[11px] font-mono font-semibold text-sky-300 shadow-xs hover:bg-charcoal-900 hover:border-sky-400 transition-all cursor-pointer"
-              title="Open NASA Space Apps Judge Brief & Logic Trail"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
-              <span>🛰️ NASA Brief</span>
-            </button>
-          )}
-          <div className="flex rounded-lg border border-moss-200 bg-cream-50 p-0.5" role="group" aria-label={t('common.language')}>
+          <div
+            className="flex rounded-full border border-[#d6c7ac] bg-[#efe6d3]/85 p-0.5 shadow-inner"
+            role="group"
+            aria-label={t('common.language')}
+          >
             {['en', 'id'].map((code) => (
               <button
                 key={code}
                 type="button"
                 onClick={() => setLocale(code)}
                 aria-pressed={locale === code}
-                className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${locale === code ? 'bg-moss-700 text-cream-50' : 'text-charcoal-600 hover:bg-cream-200'
-                  }`}
+                className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-all ${
+                  locale === code
+                    ? 'bg-[#18442e] text-[#faf6ee] shadow-xs'
+                    : 'text-[#5c5346] hover:text-[#18442e]'
+                }`}
               >
                 {code}
               </button>
             ))}
           </div>
-          <SoundToggle />
+          <SoundToggle inline />
 
-          {/* Mobile Hamburger Toggle */}
+          {/* Mobile / Tablet Hamburger Toggle */}
           <button
             ref={hamburgerButtonRef}
             type="button"
@@ -139,7 +134,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
             aria-expanded={isOpen}
             aria-controls="mobile-navigation-drawer"
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-charcoal-700 hover:bg-cream-200 hover:text-charcoal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 cursor-pointer"
+            className="xl:hidden inline-flex items-center justify-center p-2 rounded-lg text-charcoal-700 hover:bg-cream-200 hover:text-charcoal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-600 cursor-pointer"
           >
             <span className="sr-only">{isOpen ? 'Close menu' : 'Open menu'}</span>
             <div className="w-5 h-5 relative flex items-center justify-center">
@@ -163,7 +158,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
       {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-charcoal-950/40 backdrop-blur-xs transition-opacity md:hidden"
+          className="fixed inset-0 z-40 bg-charcoal-950/40 backdrop-blur-xs transition-opacity xl:hidden"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -176,7 +171,7 @@ export default function Navigation({ onOpenBrief, onReplaySplash }) {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile Navigation"
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out md:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-xs bg-paper-warm border-l border-paper-edge p-6 shadow-2xl transition-transform duration-300 ease-out xl:hidden flex flex-col justify-between overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
       >
         <div>
