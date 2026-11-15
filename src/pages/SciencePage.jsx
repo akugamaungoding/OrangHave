@@ -197,40 +197,7 @@ export default function SciencePage({ embedded = false }) {
         ))}
       </section>
 
-      {/* Pipeline */}
-      <section className="rounded-3xl border border-paper-edge bg-paper-warm p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="font-display text-xl font-bold text-charcoal-900">The ML pipeline (ml/pipeline.py)</h3>
-            <p className="text-sm text-charcoal-700">
-              Python, standard library only — a hand-written Random Forest with a fixed seed, so anyone can reproduce it offline.
-            </p>
-          </div>
-          <code className="rounded-lg bg-moss-950 px-3 py-1.5 font-mono text-xs text-cream-50">python ml/pipeline.py</code>
-        </div>
 
-        <ol className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
-          {steps.map((s) => (
-            <li key={s.n} className="flex flex-col rounded-2xl border border-paper-edge bg-cream-50 p-4">
-              <span className="font-mono text-xs font-bold text-amber-700">{s.n}</span>
-              <h4 className="mt-1 font-display font-bold text-charcoal-900">{s.title}</h4>
-              <p className="mt-1 text-sm leading-snug text-charcoal-700">{s.body}</p>
-              {s.bars && <ImportanceBars items={s.bars} />}
-              <span className="mt-auto pt-3">
-                <span className="inline-block rounded-full bg-moss-100 px-2.5 py-0.5 text-[11px] font-semibold text-moss-900">
-                  {s.tag}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ol>
-        {generated && (
-          <p className="mt-3 text-xs text-charcoal-500">
-            Scores generated {generated} from {scores.inputs?.fires} fire rows, {scores.inputs?.occurrences} occurrence rows
-            and {scores.inputs?.ndvi_plots} NDVI plots.
-          </p>
-        )}
-      </section>
 
       {/* National evidence base */}
       <section>
@@ -318,48 +285,7 @@ export default function SciencePage({ embedded = false }) {
         </ul>
       </section>
 
-      {/* From prototype to service */}
-      <section className="rounded-3xl bg-moss-950 p-6 text-cream-50">
-        <h3 className="font-display text-xl font-bold">From competition prototype to a karhutla early-warning service</h3>
-        <p className="mt-1 max-w-3xl text-sm text-cream-200/80">
-          The next step is to run this pipeline on real BRIN and NASA data every fire season, and grow it with
-          Indonesia&apos;s climate-tech ecosystem.
-        </p>
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {[
-            { key: 'block71', step: 'Incubate & build' },
-            { key: 'innofactory', step: 'Access & sustain' },
-            { key: 'skala', step: 'Validate with metrics' },
-          ].map(({ key, step }) => {
-            const fact = getFact(key, false);
-            return (
-              <a
-                key={key}
-                href={fact?.source?.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col rounded-2xl bg-white/5 p-4 hover:bg-white/10"
-              >
-                <span className="text-xs font-bold tracking-widest text-amber-200 uppercase">{step}</span>
-                <h4 className="mt-1 font-bold">{fact?.source?.title} ↗</h4>
-                <p className="mt-1 text-sm text-cream-200/80">{fact?.text}</p>
-              </a>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-xs text-cream-200/60">
-          H.O.M.E. is not affiliated with these organisations; they are listed as the ecosystem we aim to grow in.
-          Sources: {ML_ECOSYSTEM_SOURCES.map((s) => s.title).join(' · ')}.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link to="/map" className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-charcoal-900 hover:bg-amber-400">
-            See the live karhutla map →
-          </Link>
-          <Link to="/game" className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-cream-50 hover:bg-white/10">
-            Try a rescue mission →
-          </Link>
-        </div>
-      </section>
+
     </div>
   );
 }

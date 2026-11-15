@@ -54,7 +54,7 @@ export default function LandingPage() {
             className="mt-5 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-cream-50/30 bg-[#06120f]/55 px-4 py-2 text-xs font-semibold text-cream-50 backdrop-blur-sm transition-colors hover:bg-[#06120f]/75 sm:text-sm"
           >
             <span className="text-amber-200">🔬 Science &amp; Method</span>
-            <span className="hidden text-cream-200/80 sm:inline">· Random Forest · NDVI · Habitat suitability · ITENAS &amp; BRIN data</span>
+            <span className="hidden text-cream-200/80 sm:inline">· Random Forest · NDVI · Habitat suitability</span>
             <span aria-hidden="true">↓</span>
           </a>
         </div>
