@@ -420,8 +420,9 @@ const STAGES = [
     solidColor: '#13261b',
     animalCount: 3,
     enemyCount: 3,
-    timeSec: 150,
-    brushDensity: 0.48,
+    arsonistCount: 1,
+    timeSec: 140,
+    brushDensity: 0.5,
   },
   {
     id: 2,
@@ -431,8 +432,9 @@ const STAGES = [
     bgAlt: '#2a402b',
     solidColor: '#162217',
     animalCount: 4,
-    enemyCount: 4,
-    timeSec: 160,
+    enemyCount: 5,
+    arsonistCount: 2,
+    timeSec: 145,
     brushDensity: 0.56,
   },
   {
@@ -444,8 +446,35 @@ const STAGES = [
     solidColor: '#1a1814',
     animalCount: 5,
     enemyCount: 6,
-    timeSec: 180,
+    arsonistCount: 2,
+    timeSec: 150,
     brushDensity: 0.62,
+  },
+  {
+    id: 4,
+    nameEn: 'Stage 4 · Riau Hotspot Inferno',
+    nameId: 'Level 4 · Badai Titik Panas Riau',
+    bgFloor: '#2e241f',
+    bgAlt: '#382c26',
+    solidColor: '#1c1512',
+    animalCount: 5,
+    enemyCount: 8,
+    arsonistCount: 3,
+    timeSec: 155,
+    brushDensity: 0.66,
+  },
+  {
+    id: 5,
+    nameEn: 'Stage 5 · Borneo Mega-Fire Crisis',
+    nameId: 'Level 5 · Krisis Mega-Karhutla Kalimantan',
+    bgFloor: '#2b1e1e',
+    bgAlt: '#362525',
+    solidColor: '#191111',
+    animalCount: 5,
+    enemyCount: 10,
+    arsonistCount: 4,
+    timeSec: 165,
+    brushDensity: 0.7,
   },
 ];
 
@@ -508,7 +537,7 @@ function createStageState(stageIndex, preferredAnimalId = null) {
     });
   }
 
-  // Spawn Ember Spark enemies in open cells further away
+  // Spawn enemies in open cells further away with a carved patrol lane so none spawn boxed in
   const enemies = [];
   const enemyDirs = [
     { dr: 0, dc: 1 },
@@ -521,14 +550,37 @@ function createStageState(stageIndex, preferredAnimalId = null) {
     const idx = freeCells.findIndex((p) => p.r + p.c >= 6);
     const cell = idx >= 0 ? freeCells.splice(idx, 1)[0] : freeCells.pop();
     grid[cell.r][cell.c] = T_EMPTY;
-    const dir = enemyDirs[i % enemyDirs.length];
+
+    // Carve at least 2 connected non-solid neighbors (up to 2 steps deep) so the enemy can patrol freely
+    const openDirs = [];
+    const shuffledDirs = [...enemyDirs].sort(() => Math.random() - 0.5);
+    for (const d of shuffledDirs) {
+      const nr = cell.r + d.dr;
+      const nc = cell.c + d.dc;
+      if (nr > 0 && nr < ROWS - 1 && nc > 0 && nc < COLS - 1 && grid[nr][nc] !== T_SOLID) {
+        if (openDirs.length < 2) {
+          grid[nr][nc] = T_EMPTY;
+          openDirs.push(d);
+          const nr2 = nr + d.dr;
+          const nc2 = nc + d.dc;
+          if (nr2 > 0 && nr2 < ROWS - 1 && nc2 > 0 && nc2 < COLS - 1 && grid[nr2][nc2] !== T_SOLID) {
+            grid[nr2][nc2] = T_EMPTY;
+          }
+        }
+      }
+    }
+
+    const dir = openDirs[0] || enemyDirs[i % enemyDirs.length];
+    const isArsonist = i < (stage.arsonistCount || 0);
     enemies.push({
-      id: `ember-${i}`,
+      id: `${isArsonist ? 'arsonist' : 'ember'}-${i}`,
+      type: isArsonist ? 'arsonist' : 'ember',
       x: cell.c * TILE + TILE / 2,
       y: cell.r * TILE + TILE / 2,
       dr: dir.dr,
       dc: dir.dc,
-      speed: 72 + stageIndex * 14,
+      speed: (isArsonist ? 82 : 76) + stageIndex * 15,
+      igniteTimer: isArsonist ? 3.2 + Math.random() * 2.5 : 0,
       alive: true,
     });
   }
@@ -729,14 +781,20 @@ export default function KarhutlaArcadeGamePage() {
 
       splashCells.forEach((cell) => {
         gs.splashes.push({ r: cell.r, c: cell.c, life: 0.42 });
-        // Extinguish Ember Spark enemies in splash
+        // Extinguish Ember Spark & Oil-Canister Arsonist enemies in splash
         gs.enemies.forEach((en) => {
           if (!en.alive) return;
           const er = Math.floor(en.y / TILE);
           const ec = Math.floor(en.x / TILE);
           if (er === cell.r && ec === cell.c) {
             en.alive = false;
-            setScore((s) => s + 150);
+            const pts = en.type === 'arsonist' ? 250 : en.type === 'bluefire' ? 220 : 150;
+            setScore((s) => s + pts);
+            if (en.type === 'arsonist') {
+              showToast(L('🛑 Forest arsonist stopped! +250', '🛑 Pembakar hutan ditangkap! +250'));
+            } else if (en.type === 'bluefire') {
+              showToast(L('💙 Blue Oil-Fire extinguished! +220', '💙 Api Biru Minyak dipadamkan! +220'));
+            }
             for (let p = 0; p < 10; p += 1) {
               gs.particles.push({
                 x: en.x,
@@ -744,7 +802,12 @@ export default function KarhutlaArcadeGamePage() {
                 vx: (Math.random() - 0.5) * 170,
                 vy: (Math.random() - 0.5) * 170,
                 life: 0.5,
-                color: '#7dd3fc',
+                color:
+                  en.type === 'arsonist'
+                    ? '#fb923c'
+                    : en.type === 'bluefire'
+                      ? '#38bdf8'
+                      : '#7dd3fc',
               });
             }
           }
@@ -752,7 +815,7 @@ export default function KarhutlaArcadeGamePage() {
       });
     };
 
-    const isBlocked = (gs, x, y, radius = 15) => {
+    const isBlocked = (gs, x, y, radius = 15, passFireCrate = false) => {
       const corners = [
         { x: x - radius, y: y - radius },
         { x: x + radius, y: y - radius },
@@ -763,7 +826,10 @@ export default function KarhutlaArcadeGamePage() {
         const c = Math.floor(pt.x / TILE);
         const r = Math.floor(pt.y / TILE);
         if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return true;
-        if (gs.grid[r][c] !== T_EMPTY) return true;
+        const tile = gs.grid[r][c];
+        if (tile === T_EMPTY) continue;
+        if (passFireCrate && tile === T_FIRE_CRATE) continue;
+        return true;
       }
       return false;
     };
@@ -893,6 +959,26 @@ export default function KarhutlaArcadeGamePage() {
         return sp.life > 0;
       });
 
+      // Player hit by own water-bomb splash (classic Crazy Arcade hazard!)
+      if (p.shieldTimer <= 0 && p.invulnTimer <= 0 && gs.splashes.length > 0) {
+        const hitBySplash = gs.splashes.some(
+          (sp) =>
+            Math.abs(sp.c * TILE + TILE / 2 - p.x) < TILE * 0.44 &&
+            Math.abs(sp.r * TILE + TILE / 2 - p.y) < TILE * 0.44,
+        );
+        if (hitBySplash) {
+          p.lives -= 1;
+          p.invulnTimer = 2.0;
+          ArcadeAudio.playHit();
+          showToast(L('💧 Hit by water-bomb splash!', '💧 Terkena ledakan bom air!'));
+          if (p.lives <= 0) {
+            setHud((prev) => ({ ...prev, lives: 0 }));
+            setGameStatus('gameover');
+            return;
+          }
+        }
+      }
+
       // Particles decay
       gs.particles = gs.particles.filter((pt) => {
         pt.x += pt.vx * dt;
@@ -901,15 +987,20 @@ export default function KarhutlaArcadeGamePage() {
         return pt.life > 0;
       });
 
-      // Ember Enemies patrol
+      // Enemies patrol (Ember, Oil-Canister Arsonist, & Blue Oil-Fire)
       const dirs = [
         { dr: 0, dc: 1 },
         { dr: 0, dc: -1 },
         { dr: 1, dc: 0 },
         { dr: -1, dc: 0 },
       ];
+      const spawnedEnemies = [];
+      let activeBlueFires = gs.enemies.filter((e) => e.alive && e.type === 'bluefire').length;
+      const maxBlueFires = 2 + stageIdx;
+
       gs.enemies.forEach((en) => {
         if (!en.alive) return;
+        const canPassFireCrate = en.type === 'bluefire';
         const nx = en.x + en.dc * en.speed * dt;
         const ny = en.y + en.dr * en.speed * dt;
         const hitBomb = gs.bombs.some((b) => {
@@ -918,7 +1009,7 @@ export default function KarhutlaArcadeGamePage() {
           return b.r === br && b.c === bc;
         });
 
-        if (!hitBomb && !isBlocked(gs, nx, ny, 16)) {
+        if (!hitBomb && !isBlocked(gs, nx, ny, 16, canPassFireCrate)) {
           en.x = nx;
           en.y = ny;
         } else {
@@ -930,14 +1021,10 @@ export default function KarhutlaArcadeGamePage() {
           const valid = dirs.filter((d) => {
             const tr = cr + d.dr;
             const tc = cc + d.dc;
-            return (
-              tr >= 0 &&
-              tr < ROWS &&
-              tc >= 0 &&
-              tc < COLS &&
-              gs.grid[tr][tc] === T_EMPTY &&
-              !gs.bombs.some((b) => b.r === tr && b.c === tc)
-            );
+            if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) return false;
+            const tile = gs.grid[tr][tc];
+            const passable = tile === T_EMPTY || (canPassFireCrate && tile === T_FIRE_CRATE);
+            return passable && !gs.bombs.some((b) => b.r === tr && b.c === tc);
           });
           if (valid.length > 0) {
             const pick = valid[Math.floor(Math.random() * valid.length)];
@@ -946,22 +1033,129 @@ export default function KarhutlaArcadeGamePage() {
           }
         }
 
+        // Oil-Canister Arsonist either unleashes Blue Oil-Fire (passes through red fire blocks) or ignites a fire crate
+        if (en.type === 'arsonist') {
+          en.igniteTimer -= dt;
+          if (en.igniteTimer <= 0) {
+            en.igniteTimer = Math.max(2.6, 5.2 - stageIdx * 0.45) + Math.random() * 1.4;
+            const cr = Math.floor(en.y / TILE);
+            const cc = Math.floor(en.x / TILE);
+            const pr = Math.floor(p.y / TILE);
+            const pc = Math.floor(p.x / TILE);
+
+            if (activeBlueFires < maxBlueFires && Math.random() < 0.45) {
+              const blueDirs = dirs.filter((d) => {
+                const tr = cr + d.dr;
+                const tc = cc + d.dc;
+                if (tr <= 0 || tr >= ROWS - 1 || tc <= 0 || tc >= COLS - 1) return false;
+                const tile = gs.grid[tr][tc];
+                return tile === T_EMPTY || tile === T_FIRE_CRATE;
+              });
+              const pickDir =
+                blueDirs[Math.floor(Math.random() * blueDirs.length)] || dirs[0];
+              spawnedEnemies.push({
+                id: `bluefire-${Date.now()}-${Math.random()}`,
+                type: 'bluefire',
+                x: cc * TILE + TILE / 2,
+                y: cr * TILE + TILE / 2,
+                dr: pickDir.dr,
+                dc: pickDir.dc,
+                speed: 106 + stageIdx * 14,
+                igniteTimer: 0,
+                alive: true,
+              });
+              activeBlueFires += 1;
+              showToast(
+                L(
+                  '💙 Arsonist unleashed Blue Oil-Fire!',
+                  '💙 Pembakar hutan melepas Api Biru!',
+                ),
+              );
+              for (let k = 0; k < 8; k += 1) {
+                gs.particles.push({
+                  x: en.x,
+                  y: en.y,
+                  vx: (Math.random() - 0.5) * 140,
+                  vy: -40 - Math.random() * 70,
+                  life: 0.5,
+                  color: k % 2 === 0 ? '#38bdf8' : '#818cf8',
+                });
+              }
+            } else {
+              const openNeighbors = dirs
+                .map((d) => ({ r: cr + d.dr, c: cc + d.dc, dr: d.dr, dc: d.dc }))
+                .filter(
+                  (cell) =>
+                    cell.r > 0 &&
+                    cell.r < ROWS - 1 &&
+                    cell.c > 0 &&
+                    cell.c < COLS - 1 &&
+                    gs.grid[cell.r][cell.c] === T_EMPTY,
+                );
+              // Keep at least 1 open neighbor so the arsonist never walls itself in
+              if (openNeighbors.length >= 2) {
+                const candidates = openNeighbors.filter(
+                  (cell) =>
+                    !(cell.r === pr && cell.c === pc) &&
+                    !gs.animals.some((a) => !a.rescued && a.r === cell.r && a.c === cell.c) &&
+                    !gs.bombs.some((b) => b.r === cell.r && b.c === cell.c) &&
+                    !gs.enemies.some(
+                      (other) =>
+                        other.alive &&
+                        Math.floor(other.y / TILE) === cell.r &&
+                        Math.floor(other.x / TILE) === cell.c,
+                    ),
+                );
+                const nonForward = candidates.filter(
+                  (cell) => !(cell.dr === en.dr && cell.dc === en.dc),
+                );
+                const pool = nonForward.length > 0 ? nonForward : candidates;
+                if (pool.length > 0) {
+                  const target = pool[Math.floor(Math.random() * pool.length)];
+                  gs.grid[target.r][target.c] = T_FIRE_CRATE;
+                  for (let k = 0; k < 6; k += 1) {
+                    gs.particles.push({
+                      x: target.c * TILE + TILE / 2,
+                      y: target.r * TILE + TILE / 2,
+                      vx: (Math.random() - 0.5) * 110,
+                      vy: -40 - Math.random() * 60,
+                      life: 0.45,
+                      color: '#f97316',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+
         // Check collision with player
         if (Math.hypot(en.x - p.x, en.y - p.y) < 26) {
           if (p.shieldTimer > 0) {
             en.alive = false;
-            setScore((s) => s + 150);
+            const pts = en.type === 'arsonist' ? 250 : en.type === 'bluefire' ? 220 : 150;
+            setScore((s) => s + pts);
             ArcadeAudio.playSplash();
           } else if (p.invulnTimer <= 0) {
-            p.lives -= 1;
+            const dmg = en.type === 'bluefire' ? 2 : 1;
+            p.lives = Math.max(0, p.lives - dmg);
             p.invulnTimer = 2.0;
             ArcadeAudio.playHit();
+            if (en.type === 'bluefire') {
+              showToast(
+                L('💙 Hit by Blue Oil-Fire! (-2 Lives)', '💙 Terkena Api Biru Minyak! (-2 Nyawa)'),
+              );
+            }
             if (p.lives <= 0) {
               setGameStatus('gameover');
             }
           }
         }
       });
+
+      if (spawnedEnemies.length > 0) {
+        gs.enemies.push(...spawnedEnemies);
+      }
 
       hudTick += dt;
       if (hudTick >= 0.12) {
@@ -1335,7 +1529,7 @@ export default function KarhutlaArcadeGamePage() {
         ctx.fillRect(x + 11, y + 11, TILE - 22, TILE - 22);
       });
 
-      // 7. Blazing Fire Enemies (no circle/ring — pure flickering flame)
+      // 7. Enemies: Blazing Fire & Oil-Canister Forest Arsonist
       gs.enemies.forEach((en, idx) => {
         if (!en.alive) return;
         const phase = t * 11 + idx * 1.9;
@@ -1343,6 +1537,144 @@ export default function KarhutlaArcadeGamePage() {
         const stretch = Math.cos(phase * 1.4) * 3;
         const fx = en.x;
         const fy = en.y + 12;
+
+        if (en.type === 'arsonist') {
+          const step = Math.sin(t * 14 + idx * 2.1) * 2.5;
+
+          // Ground shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.beginPath();
+          ctx.ellipse(fx, fy + 4, 13, 4.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Walking boots
+          ctx.fillStyle = '#1c1917';
+          ctx.fillRect(fx - 8, fy - 2 + step * 0.5, 6, 5);
+          ctx.fillRect(fx + 2, fy - 2 - step * 0.5, 6, 5);
+
+          // Dark charcoal arsonist jacket/body
+          ctx.fillStyle = '#27272a';
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.roundRect(fx - 9, fy - 16, 18, 15, 5);
+          ctx.fill();
+          ctx.stroke();
+
+          // Red hazard vest stripe
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(fx - 7, fy - 12, 14, 3);
+
+          // Hooded head + red bandana mask
+          ctx.fillStyle = '#3f3f46';
+          ctx.beginPath();
+          ctx.arc(fx, fy - 22, 8.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Face / angry eyes
+          ctx.fillStyle = '#fde68a';
+          ctx.fillRect(fx - 5, fy - 24, 10, 4);
+          ctx.fillStyle = '#18181b';
+          ctx.fillRect(fx - 4, fy - 23, 2, 2);
+          ctx.fillRect(fx + 2, fy - 23, 2, 2);
+
+          // Red bandana over mouth
+          ctx.fillStyle = '#b91c1c';
+          ctx.fillRect(fx - 6, fy - 20, 12, 4);
+
+          // Bright Red Oil Jerrycan (left hand)
+          const jx = fx - 17;
+          const jy = fy - 14 + step * 0.3;
+          ctx.fillStyle = '#ef4444';
+          ctx.strokeStyle = '#7f1d1d';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.roundRect(jx, jy, 10, 12, 2);
+          ctx.fill();
+          ctx.stroke();
+          // Jerrycan handle & yellow hazard band
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(jx + 2, jy + 5, 6, 2.5);
+          ctx.fillStyle = '#991b1b';
+          ctx.fillRect(jx + 5, jy - 2, 3, 2.5);
+
+          // Flickering Fire Torch (right hand)
+          const tx = fx + 12;
+          const ty = fy - 13 - step * 0.3;
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(tx - 1.5, ty, 3, 10);
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.moveTo(tx, ty - 9 - stretch * 0.4);
+          ctx.quadraticCurveTo(tx + 6, ty - 3, tx, ty + 1);
+          ctx.quadraticCurveTo(tx - 6, ty - 3, tx, ty - 9 - stretch * 0.4);
+          ctx.fill();
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(tx, ty - 3, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          return;
+        }
+
+        if (en.type === 'bluefire') {
+          // Intense Blue-Violet Oil-Fire Spirit (passes through red fire blocks!)
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+          ctx.beginPath();
+          ctx.ellipse(fx, fy + 3, 15, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Outer electric cobalt-blue flame
+          ctx.fillStyle = '#2563eb';
+          ctx.beginPath();
+          ctx.moveTo(fx, fy - 33 - stretch * 1.15);
+          ctx.bezierCurveTo(fx + 18, fy - 19, fx + 18, fy + 2, fx, fy + 4);
+          ctx.bezierCurveTo(fx - 18, fy + 2, fx - 18, fy - 19, fx, fy - 33 - stretch * 1.15);
+          ctx.fill();
+
+          // Side violet-indigo licks
+          ctx.fillStyle = '#6366f1';
+          ctx.beginPath();
+          ctx.moveTo(fx - 12 + sway * 0.5, fy - 20);
+          ctx.quadraticCurveTo(fx - 17, fy - 4, fx - 5, fy + 2);
+          ctx.quadraticCurveTo(fx - 7, fy - 10, fx - 12 + sway * 0.5, fy - 20);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(fx + 12 - sway * 0.5, fy - 22);
+          ctx.quadraticCurveTo(fx + 17, fy - 5, fx + 5, fy + 2);
+          ctx.quadraticCurveTo(fx + 7, fy - 11, fx + 12 - sway * 0.5, fy - 22);
+          ctx.fill();
+
+          // Mid cyan flame
+          ctx.fillStyle = '#0ea5e9';
+          ctx.beginPath();
+          ctx.moveTo(fx + sway * 0.3, fy - 25 - stretch * 0.6);
+          ctx.bezierCurveTo(fx + 11, fy - 13, fx + 11, fy + 1, fx, fy + 2);
+          ctx.bezierCurveTo(fx - 11, fy + 1, fx - 11, fy - 13, fx + sway * 0.3, fy - 25 - stretch * 0.6);
+          ctx.fill();
+
+          // White-cyan scorching core
+          ctx.fillStyle = '#e0f2fe';
+          ctx.beginPath();
+          ctx.moveTo(fx, fy - 14);
+          ctx.bezierCurveTo(fx + 6, fy - 6, fx + 6, fy + 1, fx, fy + 1);
+          ctx.bezierCurveTo(fx - 6, fy + 1, fx - 6, fy - 6, fx, fy - 14);
+          ctx.fill();
+
+          // Fierce glowing eyes
+          ctx.fillStyle = '#09090b';
+          ctx.beginPath();
+          ctx.arc(fx - 4, fy - 7, 2.2, 0, Math.PI * 2);
+          ctx.arc(fx + 4, fy - 7, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(fx - 4, fy - 7, 1, 0, Math.PI * 2);
+          ctx.arc(fx + 4, fy - 7, 1, 0, Math.PI * 2);
+          ctx.fill();
+          return;
+        }
 
         // Soft heat shadow at base
         ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
@@ -1583,135 +1915,133 @@ export default function KarhutlaArcadeGamePage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#080c1c] px-4 py-6 text-[#4a3525]">
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#080c1c] px-3 py-3 text-[#4a3525] sm:px-5">
       <PixelSpaceWallpaper />
-      <div className="relative z-10 mx-auto max-w-5xl">
-        {/* Top Cozy Sketch Header */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-4 py-3 shadow-[4px_4px_0_#5c4033]">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#9bd3ec] shadow-[2px_2px_0_#5c4033]">
-              <PixelIcon name="bomb" size={24} />
-            </span>
-            <div>
-              <div className="inline-block rounded-full border border-[#5c4033]/50 bg-[#efe3c8] px-2.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wider text-[#6e4f3a] uppercase">
-                {L('Cozy Sketch Edition · Karhutla', 'Edisi Sketsa · Karhutla')}
+      <div className="relative z-10 mx-auto max-w-7xl">
+        {/* 3-Column Layout: Left Header & HUD Info | Full-Size Center Game | Right Controls & Power-Ups */}
+        <div className="grid items-start gap-3.5 lg:grid-cols-[236px_1fr_258px]">
+          {/* LEFT COLUMN: Compact Cozy Sketch Header + 6 HUD Info Boxes */}
+          <div className="flex flex-col gap-2.5">
+            {/* Title & Action Buttons Card */}
+            <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] p-3 shadow-[4px_4px_0_#5c4033]">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#5c4033] bg-[#9bd3ec] shadow-[2px_2px_0_#5c4033]">
+                  <PixelIcon name="bomb" size={20} />
+                </span>
+                <div>
+                  <div className="inline-block rounded-full border border-[#5c4033]/40 bg-[#efe3c8] px-2 py-0.5 font-mono text-[8px] font-bold tracking-wider text-[#6e4f3a] uppercase">
+                    {L('Cozy Sketch · Karhutla', 'Sketsa · Karhutla')}
+                  </div>
+                  <h1 className="font-hand mt-0.5 text-lg font-bold leading-tight text-[#4a3525]">
+                    {L('Peatland Water-Bomb', 'Bom Air Gambut')}
+                  </h1>
+                </div>
               </div>
-              <h1 className="font-hand mt-0.5 text-2xl font-bold leading-tight text-[#4a3525]">
-                {L('Peatland Water-Bomb Rescue', 'Misi Bom Air Penyelamat Gambut')}
-              </h1>
+
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {(gameStatus === 'playing' || gameStatus === 'paused') && (
+                  <button
+                    type="button"
+                    onClick={() => setGameStatus((s) => (s === 'playing' ? 'paused' : 'playing'))}
+                    className="cursor-pointer flex-1 rounded-lg border-2 border-[#5c4033] bg-[#f6d88c] px-2 py-1 font-mono text-[10.5px] font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#fae2a5] active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    {gameStatus === 'playing' ? L('⏸ Pause', '⏸ Jeda') : L('▶ Resume', '▶ Lanjut')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    ArcadeAudio.muted = !muted;
+                    setMuted(!muted);
+                  }}
+                  className="cursor-pointer flex-1 rounded-lg border-2 border-[#5c4033] bg-[#efe3c8] px-2 py-1 font-mono text-[10.5px] font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f7eedb] active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  {muted ? '🔇 Mute' : '🔊 SFX'}
+                </button>
+                <Link
+                  to="/game"
+                  className="w-full rounded-lg border-2 border-[#5c4033] bg-[#a8cf98] px-2.5 py-1 text-center font-mono text-[10.5px] font-extrabold text-[#2f4528] shadow-[2px_2px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  {L('← Game Hub', '← Pilih Game')}
+                </Link>
+              </div>
+            </div>
+
+            {/* 6 HUD Detail Boxes (2-column grid on left panel) */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <div className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Stage', 'Level')}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 font-hand text-base font-bold leading-tight text-[#b45309]">
+                  <PixelIcon name="flag" size={14} />
+                  <span>{stageIdx + 1} / {STAGES.length}</span>
+                </div>
+              </div>
+              <div className="rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <div className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Lives', 'Nyawa')}
+                </div>
+                <div className="mt-1 flex items-center gap-0.5">
+                  {hud.lives > 0 ? (
+                    Array.from({ length: hud.lives }).map((_, idx) => (
+                      <PixelIcon key={idx} name="heart" size={15} />
+                    ))
+                  ) : (
+                    <PixelIcon name="skull" size={16} />
+                  )}
+                </div>
+              </div>
+              <div className="rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <div className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Rescued', 'Selamat')}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 font-hand text-base font-bold leading-tight text-[#3f7d20]">
+                  <PixelIcon name="orangutan" size={15} />
+                  <span>{hud.rescued}/{hud.totalAnimals}</span>
+                </div>
+              </div>
+              <div className="rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <div className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Time', 'Waktu')}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 font-hand text-base font-bold leading-tight text-[#2563eb]">
+                  <PixelIcon name="clock" size={15} />
+                  <span>{hud.timeLeft}s</span>
+                </div>
+              </div>
+              <div className="col-span-2 flex items-center justify-between rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <span className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Power-Ups', 'Kekuatan')}
+                </span>
+                <div className="flex items-center gap-2 font-mono text-xs font-extrabold text-[#4a3525]">
+                  <span className="inline-flex items-center gap-0.5">
+                    <PixelIcon name="bomb" size={13} />
+                    {hud.maxBombs}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5">
+                    <PixelIcon name="wave" size={13} />
+                    {hud.range}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5">
+                    <PixelIcon name="bolt" size={13} />
+                    {hud.speedLvl}
+                  </span>
+                </div>
+              </div>
+              <div className="col-span-2 flex items-center justify-between rounded-xl border-2 border-[#5c4033] bg-[#fbf5e6] px-2.5 py-2 shadow-[3px_3px_0_#5c4033]">
+                <span className="font-mono text-[8.5px] font-bold tracking-wider text-[#8c6b53] uppercase">
+                  {L('Score', 'Skor')}
+                </span>
+                <div className="flex items-center gap-1 font-hand text-lg font-bold leading-none text-[#9a3412]">
+                  <PixelIcon name="star" size={15} />
+                  <span>{score.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {(gameStatus === 'playing' || gameStatus === 'paused') && (
-              <button
-                type="button"
-                onClick={() => setGameStatus((s) => (s === 'playing' ? 'paused' : 'playing'))}
-                className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#f6d88c] px-3 py-1.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#fae2a5] active:translate-x-0.5 active:translate-y-0.5"
-              >
-                {gameStatus === 'playing' ? L('⏸ Pause', '⏸ Jeda') : L('▶ Resume', '▶ Lanjut')}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                ArcadeAudio.muted = !muted;
-                setMuted(!muted);
-              }}
-              className="cursor-pointer rounded-xl border-2 border-[#5c4033] bg-[#efe3c8] px-3 py-1.5 font-mono text-xs font-extrabold text-[#4a3525] shadow-[2px_2px_0_#5c4033] hover:bg-[#f7eedb] active:translate-x-0.5 active:translate-y-0.5"
-            >
-              {muted ? '🔇 Muted' : '🔊 SFX'}
-            </button>
-            <Link
-              to="/game"
-              className="rounded-lg border border-[#e5c787]/50 bg-[#e5c787]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#f5e7c6] hover:bg-[#e5c787]/25"
-            >
-              {L('← Mission Hub', '← Pusat Misi')}
-            </Link>
-            <Link
-              to="/game"
-              className="rounded-xl border-2 border-[#5c4033] bg-[#a8cf98] px-3 py-1.5 font-mono text-xs font-extrabold text-[#2f4528] shadow-[2px_2px_0_#5c4033] hover:bg-[#b8dba9] active:translate-x-0.5 active:translate-y-0.5"
-            >
-              {L('← Game Hub', '← Pilih Game')}
-            </Link>
-          </div>
-        </div>
-
-        {/* Cozy Sketch HUD Sticker Bar with Pixel-Art Icons */}
-        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-6">
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Stage', 'Level')}
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#b45309]">
-              <PixelIcon name="flag" size={16} />
-              <span>{stageIdx + 1} / {STAGES.length}</span>
-            </div>
-          </div>
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Lives', 'Nyawa')}
-            </div>
-            <div className="mt-1 flex items-center gap-1">
-              {hud.lives > 0 ? (
-                Array.from({ length: hud.lives }).map((_, idx) => (
-                  <PixelIcon key={idx} name="heart" size={17} />
-                ))
-              ) : (
-                <PixelIcon name="skull" size={18} />
-              )}
-            </div>
-          </div>
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Rescued', 'Selamat')}
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#3f7d20]">
-              <PixelIcon name="orangutan" size={18} />
-              <span>{hud.rescued}/{hud.totalAnimals}</span>
-            </div>
-          </div>
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Time', 'Waktu')}
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#2563eb]">
-              <PixelIcon name="clock" size={17} />
-              <span>{hud.timeLeft}s</span>
-            </div>
-          </div>
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Power-Ups', 'Kekuatan')}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 font-mono text-xs font-extrabold text-[#4a3525]">
-              <span className="inline-flex items-center gap-0.5">
-                <PixelIcon name="bomb" size={14} />
-                {hud.maxBombs}
-              </span>
-              <span className="inline-flex items-center gap-0.5">
-                <PixelIcon name="wave" size={14} />
-                {hud.range}
-              </span>
-              <span className="inline-flex items-center gap-0.5">
-                <PixelIcon name="bolt" size={14} />
-                {hud.speedLvl}
-              </span>
-            </div>
-          </div>
-          <div className="rounded-2xl border-2 border-[#5c4033] bg-[#fbf5e6] px-3 py-2 shadow-[3px_3px_0_#5c4033]">
-            <div className="font-mono text-[9px] font-bold tracking-wider text-[#8c6b53] uppercase">
-              {L('Score', 'Skor')}
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 font-hand text-lg font-bold leading-tight text-[#9a3412]">
-              <PixelIcon name="star" size={17} />
-              <span>{score.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Sketch Board + Spiral Notebook Sidebar */}
-        <div className="grid gap-4 lg:grid-cols-[1fr_275px]">
+          {/* CENTER COLUMN: Full-Size Sketch Game Board */}
           <div className="relative overflow-hidden rounded-2xl border-[3px] border-[#5c4033] bg-[#243627] shadow-[5px_5px_0_#5c4033]">
             <canvas
               ref={canvasRef}
